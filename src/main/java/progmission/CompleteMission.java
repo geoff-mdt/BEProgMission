@@ -317,7 +317,7 @@ public class CompleteMission extends SimpleMission {
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
 	 * 
-	 * Computes the cinematic plan.
+	 * Computes the cinematic plan..
 	 * 
 	 * Here you need to compute the cinematic plan, which is the cinematic chain of
 	 * attitude law legs (observation, default law and slews) needed to perform the
