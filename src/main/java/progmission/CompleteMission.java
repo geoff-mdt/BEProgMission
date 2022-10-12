@@ -1,10 +1,7 @@
 package progmission;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.Map.Entry;
 
 import fr.cnes.sirius.patrius.assembly.models.SensorModel;
@@ -22,7 +19,6 @@ import fr.cnes.sirius.patrius.events.Phenomenon;
 import fr.cnes.sirius.patrius.events.postprocessing.AndCriterion;
 import fr.cnes.sirius.patrius.events.postprocessing.ElementTypeFilter;
 import fr.cnes.sirius.patrius.events.postprocessing.Timeline;
-import fr.cnes.sirius.patrius.events.sensor.SensorInhibitionDetector;
 import fr.cnes.sirius.patrius.events.sensor.SensorVisibilityDetector;
 import fr.cnes.sirius.patrius.frames.FramesFactory;
 import fr.cnes.sirius.patrius.frames.TopocentricFrame;
@@ -40,7 +36,6 @@ import fr.cnes.sirius.patrius.time.AbsoluteDateIntervalsList;
 import fr.cnes.sirius.patrius.utils.exception.PatriusException;
 import fr.cnes.sirius.patrius.utils.exception.PropagationException;
 import reader.Site;
-import sun.management.Sensor;
 import utils.ConstantsBE;
 import utils.ProjectUtilities;
 import utils.VTSTools;
@@ -603,8 +598,11 @@ public class CompleteMission extends SimpleMission {
 		 * constraint. All the methods you code can be coded using the given
 		 * createSiteXTimeline method as a basis.
 		 */
-		Timeline timeline1 = createSiteVisibilityTimeline(targetSite);
-		Timeline timeline2 = createSiteSunIncidenceTimeline(targetSite);
+		List<Timeline> listTimeline = propagateTimelines(targetSite);
+		Timeline timeline1 = listTimeline.get(0);
+		ProjectUtilities.printTimeline(timeline1);
+		Timeline timeline2 = listTimeline.get(1);
+		ProjectUtilities.printTimeline(timeline2);
 		// etc.
 
 		/**
@@ -662,6 +660,24 @@ public class CompleteMission extends SimpleMission {
 		ProjectUtilities.printTimeline(siteAccessTimeline);
 
 		return siteAccessTimeline;
+	}
+
+	private List<Timeline> propagateTimelines(Site targetSite) throws PatriusException {
+
+		CodedEventsLogger eventVisibilityLogger = createSiteVisibilityLogger(targetSite);
+		CodedEventsLogger eventSunIncidenceLogger = createSiteSunIncidenceLogger(targetSite);
+
+		this.getSatellite().getPropagator().propagate(this.getEndDate());
+
+
+		final Timeline phenomenonVisibilityTimeline = new Timeline(eventVisibilityLogger,
+				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
+
+		final Timeline phenomenonSunIncidenceTimeline = new Timeline(eventSunIncidenceLogger,
+				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
+
+
+		return Arrays.asList(phenomenonVisibilityTimeline, phenomenonSunIncidenceTimeline);
 	}
 
 	/**
@@ -825,7 +841,7 @@ public class CompleteMission extends SimpleMission {
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
-	private Timeline createSiteSunIncidenceTimeline(Site targetSite) throws PatriusException {
+	private CodedEventsLogger createSiteSunIncidenceLogger(Site targetSite) throws PatriusException {
 		EventDetector constraintSunIncidenceDetector = createConstraintSunIncidenceDetector(targetSite);
 
 
@@ -833,7 +849,7 @@ public class CompleteMission extends SimpleMission {
 
 
 		GenericCodingEventDetector codingEventSunIncidenceDetector = new GenericCodingEventDetector(constraintSunIncidenceDetector,
-				"Event starting the illumination phenomenon", "Event ending the illumination phenomenon", true, "Name of the visibility phenomenon");
+				"Start of illumination", "End of illumination", true, targetSite.getName()+ " - sun incidence window");
 		CodedEventsLogger eventSunIncidenceLogger = new CodedEventsLogger();
 		EventDetector eventSunIncidenceDetector = eventSunIncidenceLogger.monitorDetector(codingEventSunIncidenceDetector);
 
@@ -841,17 +857,17 @@ public class CompleteMission extends SimpleMission {
 
 
 		// Finally propagating the orbit
-		this.getSatellite().getPropagator().propagate(this.getEndDate());
+		// this.getSatellite().getPropagator().propagate(this.getEndDate());
 		/**
 		 * Remark : since you can add as many EventDetectors as you want to a
 		 * propagator, you might wanna delay this step afterwards to propagate the orbit
 		 * with all your detectors at once. Here we do it here to provide an example but
 		 * feel free to code your own more performant version of it.
 		 */
-		final Timeline phenomenonSunIncidenceTimeline = new Timeline(eventSunIncidenceLogger,
-				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
+		//final Timeline phenomenonSunIncidenceTimeline = new Timeline(eventSunIncidenceLogger,
+		//		new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
 
-		return phenomenonSunIncidenceTimeline;
+		return eventSunIncidenceLogger;
 	}
 
 	/**
@@ -861,7 +877,7 @@ public class CompleteMission extends SimpleMission {
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
-	private Timeline createSiteVisibilityTimeline(Site targetSite) throws PatriusException {
+	private CodedEventsLogger createSiteVisibilityLogger(Site targetSite) throws PatriusException {
 
 		EventDetector constraintVisibilityDetector = createConstraintVisibilityDetector(targetSite);
 
@@ -870,7 +886,7 @@ public class CompleteMission extends SimpleMission {
 
 
 		GenericCodingEventDetector codingEventVisibilityDetector = new GenericCodingEventDetector(constraintVisibilityDetector,
-				"Event starting the visbility phenomenon", "Event ending the visibility phenomenon", true, "Name of the visibility phenomenon");
+				"Start of visibility", "End of visibility", true, targetSite.getName()+" - visibility window");
 		CodedEventsLogger eventVisibilityLogger = new CodedEventsLogger();
 		EventDetector eventVisibilityDetector = eventVisibilityLogger.monitorDetector(codingEventVisibilityDetector);
 
@@ -878,18 +894,19 @@ public class CompleteMission extends SimpleMission {
 
 
 		// Finally propagating the orbit
-		this.getSatellite().getPropagator().propagate(this.getEndDate());
+		//this.getSatellite().getPropagator().propagate(this.getEndDate());
 		/**
 		 * Remark : since you can add as many EventDetectors as you want to a
 		 * propagator, you might wanna delay this step afterwards to propagate the orbit
 		 * with all your detectors at once. Here we do it here to provide an example but
 		 * feel free to code your own more performant version of it.
 		 */
-		final Timeline phenomenonVisibilityTimeline = new Timeline(eventVisibilityLogger,
-				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
+		//final Timeline phenomenonVisibilityTimeline = new Timeline(eventVisibilityLogger,
+		//		new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
 
-		return phenomenonVisibilityTimeline;
+		return eventVisibilityLogger;
 	}
+
 
 	/**
 	 * [COPY-PASTE AND COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
@@ -963,10 +980,10 @@ public class CompleteMission extends SimpleMission {
 		);
 
 		return new ThreeBodiesAngleDetector(
-				sitePVCoordinates,
 				this.getEarth(),
+				sitePVCoordinates,
 				this.getSun(),
-				FastMath.toRadians(ConstantsBE.MAX_SUN_INCIDENCE_ANGLE),
+				FastMath.toRadians(180-ConstantsBE.MAX_SUN_INCIDENCE_ANGLE),
 				MAXCHECK_EVENTS, TRESHOLD_EVENTS,
 				EventDetector.Action.CONTINUE
 		);

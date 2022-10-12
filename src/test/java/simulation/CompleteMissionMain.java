@@ -23,7 +23,7 @@ public class CompleteMissionMain {
 		double t0 = System.currentTimeMillis();
 
 		// Instantiating our mission using the CompleteMission object.
-		final CompleteMission mission = new CompleteMission("BE Supaero mission", 100);
+		final CompleteMission mission = new CompleteMission("BE Supaero mission", 20);
 		System.out.println("Complete simulation starting ...");
 		System.out.println(mission);
 
@@ -33,7 +33,7 @@ public class CompleteMissionMain {
 		Map<Site, Timeline> accessPlan = mission.computeAccessPlan();
 		System.out.println(accessPlan.toString());
 
-		/* // Then we compute the observation plan, that is to say we fill a plan with
+		/// Then we compute the observation plan, that is to say we fill a plan with
 		// Observation objects that can be achieved one after each other by the
 		// satellite without breaking the cinematic constraints imposed by the
 		// satellite agility.
@@ -42,7 +42,7 @@ public class CompleteMissionMain {
 
 		// Then, we compute the cinematic plan, which is the whole cinematic sequence of
 		// attitude law legs for our satellite during the mission horizon
-		StrictAttitudeLegsSequence<AttitudeLeg> cinematicPlan = mission.computeCinematicPlan();
+		/**StrictAttitudeLegsSequence<AttitudeLeg> cinematicPlan = mission.computeCinematicPlan();
 		System.out.println(cinematicPlan.toPrettyString());
 
 		// Checking our cinematic plan
@@ -53,7 +53,7 @@ public class CompleteMissionMain {
 		// observationPlan
 		System.out.println(mission.computeFinalScore());
 
-		// Finally, we write the VTS outputs to visualize and validate our plan
+		//Finally, we write the VTS outputs to visualize and validate our plan
 		mission.generateVTSVisualization(cinematicPlan);*/
 
 		System.out.println("\n\nSimulation done");
