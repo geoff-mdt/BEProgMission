@@ -23,7 +23,7 @@ public class CompleteMissionMain {
 		double t0 = System.currentTimeMillis();
 
 		// Instantiating our mission using the CompleteMission object.
-		final CompleteMission mission = new CompleteMission("BE Supaero mission", 20);
+		final CompleteMission mission = new CompleteMission("BE Supaero mission", 1);
 		System.out.println("Complete simulation starting ...");
 		System.out.println(mission);
 
@@ -56,6 +56,7 @@ public class CompleteMissionMain {
 		//Finally, we write the VTS outputs to visualize and validate our plan
 		mission.generateVTSVisualization(cinematicPlan);*/
 
+
 		System.out.println("\n\nSimulation done");
 
 		// Computing the time of execution
@@ -63,6 +64,9 @@ public class CompleteMissionMain {
 		System.out.println("Total duration : " + 0.001 * (t1 - t0));
 
 		System.out.println("##################################################");
+
+		// To output files for AcessTimeline Visualization
+		mission.createSimpleVTSVisualization();
 	}
 
 }
