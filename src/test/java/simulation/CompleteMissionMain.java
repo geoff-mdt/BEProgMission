@@ -37,12 +37,12 @@ public class CompleteMissionMain {
 		// Observation objects that can be achieved one after each other by the
 		// satellite without breaking the cinematic constraints imposed by the
 		// satellite agility.
-		Map<Site, AttitudeLawLeg> observationPlan = mission.computeObservationPlan();
+		/*Map<Site, AttitudeLawLeg> observationPlan = mission.computeObservationPlan();
 		System.out.println(observationPlan.toString());
 
 		// Then, we compute the cinematic plan, which is the whole cinematic sequence of
 		// attitude law legs for our satellite during the mission horizon
-		/**StrictAttitudeLegsSequence<AttitudeLeg> cinematicPlan = mission.computeCinematicPlan();
+		StrictAttitudeLegsSequence<AttitudeLeg> cinematicPlan = mission.computeCinematicPlan();
 		System.out.println(cinematicPlan.toPrettyString());
 
 		// Checking our cinematic plan

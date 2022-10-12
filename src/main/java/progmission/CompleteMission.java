@@ -598,12 +598,21 @@ public class CompleteMission extends SimpleMission {
 		 * constraint. All the methods you code can be coded using the given
 		 * createSiteXTimeline method as a basis.
 		 */
+
+		// We propagate to have a Timeline for each detector thanks to our loggers
 		List<Timeline> listTimeline = propagateTimelines(targetSite);
-		Timeline timeline1 = listTimeline.get(0);
-		ProjectUtilities.printTimeline(timeline1);
-		Timeline timeline2 = listTimeline.get(1);
-		ProjectUtilities.printTimeline(timeline2);
-		// etc.
+
+		// Set a global Timeline to serve as final access timeline for our targetSite
+		final Timeline siteAccessTimeline = new Timeline(
+				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()));
+
+		// Adding the phenomena of all the considered timelines
+		for (Timeline timeline: listTimeline) {
+			ProjectUtilities.printTimeline(timeline);
+			for (final Phenomenon phenom : timeline.getPhenomenaList()) {
+				siteAccessTimeline.addPhenomenon(phenom);
+			}
+		}
 
 		/**
 		 * Step 2 :
@@ -624,36 +633,21 @@ public class CompleteMission extends SimpleMission {
 		 */
 		// Combining all Timelines
 		// Creating a global Timeline containing all phenomena, this Timeline will be
-		// filtered and processed to that only the access Phenomennon remain, this is
+		// filtered and processed to that only the access Phenomenon remain, this is
 		// our siteAccessTimeline
-		final Timeline siteAccessTimeline = new Timeline(
-				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()));
-		// Adding the phenomena of all the considered timelines
-		for (final Phenomenon phenom : timeline1.getPhenomenaList()) {
-			siteAccessTimeline.addPhenomenon(phenom);
-		}
-		for (final Phenomenon phenom : timeline2.getPhenomenaList()) {
-			siteAccessTimeline.addPhenomenon(phenom);
-		}
 
-		// Define and use your own criteria, here is an example (use the right strings
-		// defined when naming the phenomenon in the GenericCodingEventDetector)
-		AndCriterion andCriterion = new AndCriterion("Visibility", "Sun Incidence",
-				"Name of the X1 AND X2 phenomenon", "Comment about this phenomenon");
-		// Applying our criterion adds all the new phenonmena inside the global timeline
-		andCriterion.applyTo(siteAccessTimeline);
+		AndCriterion andCriterionA = new AndCriterion("Visibility", "SunIncidence",
+				"Visibility AND SunIncidence", "");
+		AndCriterion andCriterionB = new AndCriterion("Visibility AND SunIncidence",
+				"NonGlare",
+				"Visibility AND SunIncidence AND NonGlare", "");
 
-		// Then create an ElementTypeFilter that will filter all phenomenon not
-		// respecting the input condition you gave it
-		final ElementTypeFilter obsConditionFilter = new ElementTypeFilter("Name of the X1 AND X2 phenomenon", false);
-		// Finally, we filter the global timeline to keep only X1 AND X2 phenomena
-		obsConditionFilter.applyTo(siteAccessTimeline);
+		andCriterionA.applyTo(siteAccessTimeline);
+		andCriterionB.applyTo(siteAccessTimeline);
 
-		/*
-		 * Now make sure your globalTimeline represents the access Timeline for the
-		 * input target Site and it's done ! You can print the Timeline using the
-		 * utility module of the BE as below
-		 */
+		final ElementTypeFilter obsThirdConditionFilter = new ElementTypeFilter("Visibility AND SunIncidence AND NonGlare", false);
+		obsThirdConditionFilter.applyTo(siteAccessTimeline);
+
 
 		// Log the final access timeline associated to the current target
 		System.out.println("\n" + targetSite.getName());
@@ -666,6 +660,7 @@ public class CompleteMission extends SimpleMission {
 
 		CodedEventsLogger eventVisibilityLogger = createSiteVisibilityLogger(targetSite);
 		CodedEventsLogger eventSunIncidenceLogger = createSiteSunIncidenceLogger(targetSite);
+		CodedEventsLogger eventNonGlareLogger = createSiteNonGlareLogger(targetSite);
 
 		this.getSatellite().getPropagator().propagate(this.getEndDate());
 
@@ -676,8 +671,11 @@ public class CompleteMission extends SimpleMission {
 		final Timeline phenomenonSunIncidenceTimeline = new Timeline(eventSunIncidenceLogger,
 				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
 
+		final Timeline phenomenonNonGlareTimeline = new Timeline(eventNonGlareLogger,
+				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
 
-		return Arrays.asList(phenomenonVisibilityTimeline, phenomenonSunIncidenceTimeline);
+
+		return Arrays.asList(phenomenonVisibilityTimeline, phenomenonSunIncidenceTimeline, phenomenonNonGlareTimeline);
 	}
 
 	/**
@@ -834,6 +832,45 @@ public class CompleteMission extends SimpleMission {
 		return phenomenonXTimeline;
 	}
 
+
+
+	/**
+	 * @param targetSite Input target {@link Site}
+	 * @return The {@link Timeline} containing all the {@link Phenomenon} relative
+	 *         to the X phenomenon to monitor.
+	 * @throws PatriusException If a {@link PatriusException} occurs when creating
+	 *                          the {@link Timeline}.
+	 */
+	private CodedEventsLogger createSiteVisibilityLogger(Site targetSite) throws PatriusException {
+
+		EventDetector constraintVisibilityDetector = createConstraintVisibilityDetector(targetSite);
+
+
+		this.getSatellite().getPropagator().addEventDetector(constraintVisibilityDetector);
+
+
+		GenericCodingEventDetector codingEventVisibilityDetector = new GenericCodingEventDetector(constraintVisibilityDetector,
+				"Start of visibility", "End of visibility", true, "Visibility");
+		CodedEventsLogger eventVisibilityLogger = new CodedEventsLogger();
+		EventDetector eventVisibilityDetector = eventVisibilityLogger.monitorDetector(codingEventVisibilityDetector);
+
+		this.getSatellite().getPropagator().addEventDetector(eventVisibilityDetector);
+
+
+		// Finally propagating the orbit
+		//this.getSatellite().getPropagator().propagate(this.getEndDate());
+		/**
+		 * Remark : since you can add as many EventDetectors as you want to a
+		 * propagator, you might wanna delay this step afterwards to propagate the orbit
+		 * with all your detectors at once. Here we do it here to provide an example but
+		 * feel free to code your own more performant version of it.
+		 */
+		//final Timeline phenomenonVisibilityTimeline = new Timeline(eventVisibilityLogger,
+		//		new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
+
+		return eventVisibilityLogger;
+	}
+
 	/**
 	 * @param targetSite Input target {@link Site}
 	 * @return The {@link Timeline} containing all the {@link Phenomenon} relative
@@ -849,7 +886,7 @@ public class CompleteMission extends SimpleMission {
 
 
 		GenericCodingEventDetector codingEventSunIncidenceDetector = new GenericCodingEventDetector(constraintSunIncidenceDetector,
-				"Start of illumination", "End of illumination", true, targetSite.getName()+ " - sun incidence window");
+				"Start of illumination", "End of illumination", true, "SunIncidence");
 		CodedEventsLogger eventSunIncidenceLogger = new CodedEventsLogger();
 		EventDetector eventSunIncidenceDetector = eventSunIncidenceLogger.monitorDetector(codingEventSunIncidenceDetector);
 
@@ -877,34 +914,21 @@ public class CompleteMission extends SimpleMission {
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
-	private CodedEventsLogger createSiteVisibilityLogger(Site targetSite) throws PatriusException {
-
-		EventDetector constraintVisibilityDetector = createConstraintVisibilityDetector(targetSite);
-
-
-		this.getSatellite().getPropagator().addEventDetector(constraintVisibilityDetector);
+	private CodedEventsLogger createSiteNonGlareLogger(Site targetSite) throws PatriusException {
+		EventDetector constraintNonGlareDetector = createConstraintNonGlareDetector(targetSite);
 
 
-		GenericCodingEventDetector codingEventVisibilityDetector = new GenericCodingEventDetector(constraintVisibilityDetector,
-				"Start of visibility", "End of visibility", true, targetSite.getName()+" - visibility window");
-		CodedEventsLogger eventVisibilityLogger = new CodedEventsLogger();
-		EventDetector eventVisibilityDetector = eventVisibilityLogger.monitorDetector(codingEventVisibilityDetector);
-
-		this.getSatellite().getPropagator().addEventDetector(eventVisibilityDetector);
+		this.getSatellite().getPropagator().addEventDetector(constraintNonGlareDetector);
 
 
-		// Finally propagating the orbit
-		//this.getSatellite().getPropagator().propagate(this.getEndDate());
-		/**
-		 * Remark : since you can add as many EventDetectors as you want to a
-		 * propagator, you might wanna delay this step afterwards to propagate the orbit
-		 * with all your detectors at once. Here we do it here to provide an example but
-		 * feel free to code your own more performant version of it.
-		 */
-		//final Timeline phenomenonVisibilityTimeline = new Timeline(eventVisibilityLogger,
-		//		new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
+		GenericCodingEventDetector codingEventNonGlareDetector = new GenericCodingEventDetector(constraintNonGlareDetector,
+				"Start of correct phase angle", "End of correct phase angle", true, "NonGlare");
+		CodedEventsLogger eventNonGlareLogger = new CodedEventsLogger();
+		EventDetector eventNonGlareDetector = eventNonGlareLogger.monitorDetector(codingEventNonGlareDetector);
 
-		return eventVisibilityLogger;
+		this.getSatellite().getPropagator().addEventDetector(eventNonGlareDetector);
+
+		return eventNonGlareLogger;
 	}
 
 
@@ -988,6 +1012,25 @@ public class CompleteMission extends SimpleMission {
 				EventDetector.Action.CONTINUE
 		);
 	}
+
+	private EventDetector createConstraintNonGlareDetector(Site targetSite){
+
+		PVCoordinatesProvider sitePVCoordinates = new TopocentricFrame(
+				this.getEarth(),
+				targetSite.getPoint(),
+				targetSite.getName()
+		);
+
+		return new ThreeBodiesAngleDetector(
+				this.getSun(),
+				sitePVCoordinates,
+				ThreeBodiesAngleDetector.BodyOrder.THIRD,
+				FastMath.toRadians(ConstantsBE.MAX_SUN_PHASE_ANGLE),
+				MAXCHECK_EVENTS, TRESHOLD_EVENTS,
+				EventDetector.Action.CONTINUE
+		);
+	}
+
 
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
