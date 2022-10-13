@@ -26,6 +26,7 @@ import fr.cnes.sirius.patrius.math.util.FastMath;
 import fr.cnes.sirius.patrius.orbits.Orbit;
 import fr.cnes.sirius.patrius.orbits.pvcoordinates.PVCoordinatesProvider;
 import fr.cnes.sirius.patrius.propagation.BoundedPropagator;
+import fr.cnes.sirius.patrius.propagation.Propagator;
 import fr.cnes.sirius.patrius.propagation.analytical.KeplerianPropagator;
 import fr.cnes.sirius.patrius.propagation.events.ConstantRadiusProvider;
 import fr.cnes.sirius.patrius.propagation.events.EventDetector;
@@ -146,10 +147,15 @@ public class CompleteMission extends SimpleMission {
 		 *
 		 * Please complete the code below.
 		 */
-		Site targetSite = this.getSiteList().get(0);
+		for(Site targetSite: this.getSiteList()) {
+			Timeline siteAccessTimeline = createSiteAccessTimeline(targetSite);
+			accessPlan.put(targetSite, siteAccessTimeline);
+			ProjectUtilities.printTimeline(siteAccessTimeline);
+		}
+		/*Site targetSite = this.getSiteList().get(0);
 		Timeline siteAccessTimeline = createSiteAccessTimeline(targetSite);
 		accessPlan.put(targetSite, siteAccessTimeline);
-		ProjectUtilities.printTimeline(siteAccessTimeline);
+		ProjectUtilities.printTimeline(siteAccessTimeline);*/
 		return this.accessPlan;
 	}
 
@@ -608,7 +614,7 @@ public class CompleteMission extends SimpleMission {
 
 		// Adding the phenomena of all the considered timelines
 		for (Timeline timeline: listTimeline) {
-			ProjectUtilities.printTimeline(timeline);
+			//ProjectUtilities.printTimeline(timeline);
 			for (final Phenomenon phenom : timeline.getPhenomenaList()) {
 				siteAccessTimeline.addPhenomenon(phenom);
 			}
@@ -650,20 +656,21 @@ public class CompleteMission extends SimpleMission {
 
 
 		// Log the final access timeline associated to the current target
-		System.out.println("\n" + targetSite.getName());
-		ProjectUtilities.printTimeline(siteAccessTimeline);
+		//System.out.println("\n" + targetSite.getName());
+		//ProjectUtilities.printTimeline(siteAccessTimeline);
 
 		return siteAccessTimeline;
 	}
 
 	private List<Timeline> propagateTimelines(Site targetSite) throws PatriusException {
 
-		CodedEventsLogger eventVisibilityLogger = createSiteVisibilityLogger(targetSite);
-		CodedEventsLogger eventSunIncidenceLogger = createSiteSunIncidenceLogger(targetSite);
-		CodedEventsLogger eventNonGlareLogger = createSiteNonGlareLogger(targetSite);
+		KeplerianPropagator propagator = this.createDefaultPropagator();
 
-		this.getSatellite().getPropagator().propagate(this.getEndDate());
+		CodedEventsLogger eventVisibilityLogger = createSiteVisibilityLogger(targetSite, propagator);
+		CodedEventsLogger eventSunIncidenceLogger = createSiteSunIncidenceLogger(targetSite, propagator);
+		CodedEventsLogger eventNonGlareLogger = createSiteNonGlareLogger(targetSite, propagator);
 
+		propagator.propagate(this.getEndDate());
 
 		final Timeline phenomenonVisibilityTimeline = new Timeline(eventVisibilityLogger,
 				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()), null);
@@ -841,12 +848,12 @@ public class CompleteMission extends SimpleMission {
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
-	private CodedEventsLogger createSiteVisibilityLogger(Site targetSite) throws PatriusException {
+	private CodedEventsLogger createSiteVisibilityLogger(Site targetSite, Propagator propagator) throws PatriusException {
 
 		EventDetector constraintVisibilityDetector = createConstraintVisibilityDetector(targetSite);
 
 
-		this.getSatellite().getPropagator().addEventDetector(constraintVisibilityDetector);
+		propagator.addEventDetector(constraintVisibilityDetector);
 
 
 		GenericCodingEventDetector codingEventVisibilityDetector = new GenericCodingEventDetector(constraintVisibilityDetector,
@@ -854,7 +861,7 @@ public class CompleteMission extends SimpleMission {
 		CodedEventsLogger eventVisibilityLogger = new CodedEventsLogger();
 		EventDetector eventVisibilityDetector = eventVisibilityLogger.monitorDetector(codingEventVisibilityDetector);
 
-		this.getSatellite().getPropagator().addEventDetector(eventVisibilityDetector);
+		propagator.addEventDetector(eventVisibilityDetector);
 
 
 		// Finally propagating the orbit
@@ -878,11 +885,11 @@ public class CompleteMission extends SimpleMission {
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
-	private CodedEventsLogger createSiteSunIncidenceLogger(Site targetSite) throws PatriusException {
+	private CodedEventsLogger createSiteSunIncidenceLogger(Site targetSite, Propagator propagator) throws PatriusException {
 		EventDetector constraintSunIncidenceDetector = createConstraintSunIncidenceDetector(targetSite);
 
 
-		this.getSatellite().getPropagator().addEventDetector(constraintSunIncidenceDetector);
+		propagator.addEventDetector(constraintSunIncidenceDetector);
 
 
 		GenericCodingEventDetector codingEventSunIncidenceDetector = new GenericCodingEventDetector(constraintSunIncidenceDetector,
@@ -890,7 +897,7 @@ public class CompleteMission extends SimpleMission {
 		CodedEventsLogger eventSunIncidenceLogger = new CodedEventsLogger();
 		EventDetector eventSunIncidenceDetector = eventSunIncidenceLogger.monitorDetector(codingEventSunIncidenceDetector);
 
-		this.getSatellite().getPropagator().addEventDetector(eventSunIncidenceDetector);
+		propagator.addEventDetector(eventSunIncidenceDetector);
 
 
 		// Finally propagating the orbit
@@ -914,11 +921,11 @@ public class CompleteMission extends SimpleMission {
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
-	private CodedEventsLogger createSiteNonGlareLogger(Site targetSite) throws PatriusException {
+	private CodedEventsLogger createSiteNonGlareLogger(Site targetSite, Propagator propagator) throws PatriusException {
 		EventDetector constraintNonGlareDetector = createConstraintNonGlareDetector(targetSite);
 
 
-		this.getSatellite().getPropagator().addEventDetector(constraintNonGlareDetector);
+		propagator.addEventDetector(constraintNonGlareDetector);
 
 
 		GenericCodingEventDetector codingEventNonGlareDetector = new GenericCodingEventDetector(constraintNonGlareDetector,
@@ -926,7 +933,7 @@ public class CompleteMission extends SimpleMission {
 		CodedEventsLogger eventNonGlareLogger = new CodedEventsLogger();
 		EventDetector eventNonGlareDetector = eventNonGlareLogger.monitorDetector(codingEventNonGlareDetector);
 
-		this.getSatellite().getPropagator().addEventDetector(eventNonGlareDetector);
+		propagator.addEventDetector(eventNonGlareDetector);
 
 		return eventNonGlareLogger;
 	}
