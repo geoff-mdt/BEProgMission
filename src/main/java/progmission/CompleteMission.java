@@ -279,7 +279,7 @@ public class CompleteMission extends SimpleMission {
 				System.out.println("Maximum possible duration of the slew : " + slew12Duration);
 				double actualDuration = date2.durationFrom(date1);
 				System.out.println("Actual duration of the slew : " + actualDuration);
-				/**
+				/*
 				 * Of course, here the actual duration is less than the maximum possible
 				 * duration because the TargetGroundPointing mode is a very slow one and the
 				 * Satellite is very agile. But sometimes when trying to perform a slew from one
@@ -288,13 +288,13 @@ public class CompleteMission extends SimpleMission {
 				 * perform one of the observation.
 				 */
 
-				/**
+				/*
 				 * Let's say after comparing several observation slews, you find a valid couple
 				 * of dates defining your observation window : {obsStart;obsEnd}, with
 				 * obsEnd.durationFrom(obsStart) == ConstantsBE.INTEGRATION_TIME.
 				 *
-				 * Then you can use those dates to create your AtittudeLawLeg that you will
-				 * insert inside the observaiton pla, for this target. Reminder : only one
+				 * Then you can use those dates to create your AttitudeLawLeg that you will
+				 * insert inside the observation pla, for this target. Reminder : only one
 				 * observation in the observation plan per target !
 				 *
 				 * WARNING : what we do here doesn't work, we didn't check that there wasn't
@@ -614,7 +614,7 @@ public class CompleteMission extends SimpleMission {
 
 		// Adding the phenomena of all the considered timelines
 		for (Timeline timeline: listTimeline) {
-			//ProjectUtilities.printTimeline(timeline);
+			// ProjectUtilities.printTimeline(timeline, targetSite);
 			for (final Phenomenon phenom : timeline.getPhenomenaList()) {
 				siteAccessTimeline.addPhenomenon(phenom);
 			}
@@ -646,7 +646,7 @@ public class CompleteMission extends SimpleMission {
 				"Visibility AND SunIncidence", "");
 		AndCriterion andCriterionB = new AndCriterion("Visibility AND SunIncidence",
 				"NonGlare",
-				"Visibility AND SunIncidence AND NonGlare", "");
+				"Visibility AND SunIncidence AND NonGlare", "Obs conditions checked");
 
 		andCriterionA.applyTo(siteAccessTimeline);
 		andCriterionB.applyTo(siteAccessTimeline);
@@ -656,8 +656,8 @@ public class CompleteMission extends SimpleMission {
 
 
 		// Log the final access timeline associated to the current target
-		//System.out.println("\n" + targetSite.getName());
-		//ProjectUtilities.printTimeline(siteAccessTimeline);
+		// System.out.println("\n" + targetSite.getName());
+		// ProjectUtilities.printTimeline(siteAccessTimeline);
 
 		return siteAccessTimeline;
 	}

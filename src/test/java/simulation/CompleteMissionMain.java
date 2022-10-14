@@ -31,7 +31,7 @@ public class CompleteMissionMain {
 		// access is an observation opportunity to be consider in the later scheduling
 		// process.
 		Map<Site, Timeline> accessPlan = mission.computeAccessPlan();
-		System.out.println(accessPlan.toString());
+		// System.out.println(accessPlan.toString());
 
 		/// Then we compute the observation plan, that is to say we fill a plan with
 		// Observation objects that can be achieved one after each other by the
