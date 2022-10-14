@@ -644,6 +644,7 @@ public class CompleteMission extends SimpleMission {
 
 		AndCriterion andCriterionA = new AndCriterion("Visibility", "SunIncidence",
 				"Visibility AND SunIncidence", "");
+		// NotCriterion notNonGlareCriterion = new NotCriterion("NonGlare", "NotNonGlare", "");
 		AndCriterion andCriterionB = new AndCriterion("Visibility AND SunIncidence",
 				"NonGlare",
 				"Visibility AND SunIncidence AND NonGlare", "Obs conditions checked");
@@ -1031,7 +1032,7 @@ public class CompleteMission extends SimpleMission {
 		return new ThreeBodiesAngleDetector(
 				this.getSun(),
 				sitePVCoordinates,
-				ThreeBodiesAngleDetector.BodyOrder.THIRD,
+				ThreeBodiesAngleDetector.BodyOrder.SECOND,
 				FastMath.toRadians(ConstantsBE.MAX_SUN_PHASE_ANGLE),
 				MAXCHECK_EVENTS, TRESHOLD_EVENTS,
 				EventDetector.Action.CONTINUE
