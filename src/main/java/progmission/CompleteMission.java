@@ -5,13 +5,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import fr.cnes.sirius.patrius.assembly.models.SensorModel;
-import fr.cnes.sirius.patrius.attitudes.Attitude;
-import fr.cnes.sirius.patrius.attitudes.AttitudeLaw;
-import fr.cnes.sirius.patrius.attitudes.AttitudeLawLeg;
-import fr.cnes.sirius.patrius.attitudes.AttitudeLeg;
-import fr.cnes.sirius.patrius.attitudes.AttitudeProvider;
-import fr.cnes.sirius.patrius.attitudes.ConstantSpinSlew;
-import fr.cnes.sirius.patrius.attitudes.StrictAttitudeLegsSequence;
+import fr.cnes.sirius.patrius.attitudes.*;
 import fr.cnes.sirius.patrius.events.CodedEvent;
 import fr.cnes.sirius.patrius.events.CodedEventsLogger;
 import fr.cnes.sirius.patrius.events.GenericCodingEventDetector;
@@ -1068,10 +1062,15 @@ public class CompleteMission extends SimpleMission {
 		 * remind you that the Site object has an attribute which is a GeodeticPoint.
 		 * Use those informations to your advantage to build a TargetGroundPointing.
 		 */
+
+
 		/*
 		 * Complete the code below to create your observation law and return it
 		 */
-		return null;
+
+		TargetGroundPointing targetGroundPointing = new TargetGroundPointing(this.getEarth(),target.getPoint());
+
+		return targetGroundPointing;
 	}
 
 	@Override
