@@ -248,7 +248,7 @@ public class CompleteMission extends SimpleMission {
 				 * the Attitude of your Satellite pointing the target (using the getAttitude()
 				 * method). You can use those Attitudes to compute the duration of a slew from
 				 * one Attitude to another, for example the duration of the slew from the
-				 * Attitude at the end of an observation to the Atittude at the start of the
+				 * Attitude at the end of an observation to the Attitude at the start of the
 				 * next one. That's how you will be able to choose a valid AbsoluteDateInterval
 				 * during which the observation will actually be performed, lasting
 				 * ConstantsBE.INTEGRATION_TIME seconds. When you have your observation
