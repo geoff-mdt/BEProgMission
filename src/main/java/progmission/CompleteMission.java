@@ -255,7 +255,7 @@ public class CompleteMission extends SimpleMission {
 				 * SimpleMission#createDefaultPropagator()), an AbsoluteDate and a Frame (which
 				 * we provide with this.getEME2000()).
 				 */
-				// Getting the begining/end of the accessIntervall as AbsoluteDate objects
+				// Getting the beginning/end of the accessInterval as AbsoluteDate objects
 				AbsoluteDate date1 = accessInterval.getLowerData();
 				AbsoluteDate date2 = accessInterval.getUpperData();
 				Attitude attitude1 = observationLaw.getAttitude(this.createDefaultPropagator(), date1,
