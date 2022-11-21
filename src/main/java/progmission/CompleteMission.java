@@ -16,9 +16,7 @@ import fr.cnes.sirius.patrius.events.CodedEvent;
 import fr.cnes.sirius.patrius.events.CodedEventsLogger;
 import fr.cnes.sirius.patrius.events.GenericCodingEventDetector;
 import fr.cnes.sirius.patrius.events.Phenomenon;
-import fr.cnes.sirius.patrius.events.postprocessing.AndCriterion;
-import fr.cnes.sirius.patrius.events.postprocessing.ElementTypeFilter;
-import fr.cnes.sirius.patrius.events.postprocessing.Timeline;
+import fr.cnes.sirius.patrius.events.postprocessing.*;
 import fr.cnes.sirius.patrius.events.sensor.SensorVisibilityDetector;
 import fr.cnes.sirius.patrius.frames.FramesFactory;
 import fr.cnes.sirius.patrius.frames.TopocentricFrame;
@@ -653,6 +651,8 @@ public class CompleteMission extends SimpleMission {
 
 		final ElementTypeFilter obsThirdConditionFilter = new ElementTypeFilter("Visibility AND SunIncidence AND NonGlare", false);
 		obsThirdConditionFilter.applyTo(siteAccessTimeline);
+		final PhenomenonDurationFilter integrationTimeFilter = new PhenomenonDurationFilter("Visibility AND SunIncidence AND NonGlare", ConstantsBE.INTEGRATION_TIME, true);
+		integrationTimeFilter.applyTo(siteAccessTimeline);
 
 
 		// Log the final access timeline associated to the current target
@@ -1031,11 +1031,21 @@ public class CompleteMission extends SimpleMission {
 		return new ThreeBodiesAngleDetector(
 				this.getSun(),
 				sitePVCoordinates,
-				ThreeBodiesAngleDetector.BodyOrder.THIRD,
+				ThreeBodiesAngleDetector.BodyOrder.SECOND,
 				FastMath.toRadians(ConstantsBE.MAX_SUN_PHASE_ANGLE),
 				MAXCHECK_EVENTS, TRESHOLD_EVENTS,
 				EventDetector.Action.CONTINUE
 		);
+
+		/**
+		return new ThreeBodiesAngleDetector(
+				this.getSun(),
+				sitePVCoordinates,
+				ThreeBodiesAngleDetector.BodyOrder.THIRD,
+				FastMath.toRadians(ConstantsBE.MAX_SUN_PHASE_ANGLE),
+				MAXCHECK_EVENTS, TRESHOLD_EVENTS,
+				EventDetector.Action.CONTINUE
+		);*/
 	}
 
 
