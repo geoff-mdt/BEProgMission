@@ -1037,15 +1037,6 @@ public class CompleteMission extends SimpleMission {
 				EventDetector.Action.CONTINUE
 		);
 
-		/**
-		return new ThreeBodiesAngleDetector(
-				this.getSun(),
-				sitePVCoordinates,
-				ThreeBodiesAngleDetector.BodyOrder.THIRD,
-				FastMath.toRadians(ConstantsBE.MAX_SUN_PHASE_ANGLE),
-				MAXCHECK_EVENTS, TRESHOLD_EVENTS,
-				EventDetector.Action.CONTINUE
-		);*/
 	}
 
 
