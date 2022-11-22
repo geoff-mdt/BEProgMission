@@ -12,6 +12,7 @@ import fr.cnes.sirius.patrius.events.GenericCodingEventDetector;
 import fr.cnes.sirius.patrius.events.Phenomenon;
 import fr.cnes.sirius.patrius.events.postprocessing.AndCriterion;
 import fr.cnes.sirius.patrius.events.postprocessing.ElementTypeFilter;
+import fr.cnes.sirius.patrius.events.postprocessing.PhenomenonDurationFilter;
 import fr.cnes.sirius.patrius.events.postprocessing.Timeline;
 import fr.cnes.sirius.patrius.events.sensor.SensorVisibilityDetector;
 import fr.cnes.sirius.patrius.frames.FramesFactory;
