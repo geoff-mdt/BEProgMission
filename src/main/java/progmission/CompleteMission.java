@@ -286,7 +286,7 @@ public class CompleteMission extends SimpleMission {
 				 * obsEnd.durationFrom(obsStart) == ConstantsBE.INTEGRATION_TIME.
 				 *
 				 * Then you can use those dates to create your AttitudeLawLeg that you will
-				 * insert inside the observation pla, for this target. Reminder : only one
+				 * insert inside the observation plan for this target. Reminder : only one
 				 * observation in the observation plan per target !
 				 *
 				 * WARNING : what we do here doesn't work, we didn't check that there wasn't
@@ -318,7 +318,7 @@ public class CompleteMission extends SimpleMission {
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
 	 *
-	 * Computes the cinematic plan..
+	 * Computes the cinematic plan ...
 	 *
 	 * Here you need to compute the cinematic plan, which is the cinematic chain of
 	 * attitude law legs (observation, default law and slews) needed to perform the
@@ -354,12 +354,12 @@ public class CompleteMission extends SimpleMission {
 		 * Tip 2 : the sequence you want to obtain should look like this :
 		 * [nadir-slew-obs1-slew-obs2-slew-obs3-slew-nadir] for the simple version where
 		 * you don't try to fit nadir laws between observations or
-		 * [nadir-slew-obs1-slew-nadir-selw-obs2-slew-obs3-slew-nadir] for the more
-		 * complexe version with nadir laws if the slew during two observation is long
+		 * [nadir-slew-obs1-slew-nadir-slew-obs2-slew-obs3-slew-nadir] for the more
+		 * complex version with nadir laws if the slew during two observation is long
 		 * enough.
 		 *
 		 * Tip 3 : You can use the class ConstantSpinSlew(initialAttitude,
-		 * finalAttitude, slewName) for the slews. This an AtittudeLeg so you will be
+		 * finalAttitude, slewName) for the slews. This an AttitudeLeg so you will be
 		 * able to add it to the StrictAttitudeLegsSequence as every other leg.
 		 */
 
@@ -371,7 +371,7 @@ public class CompleteMission extends SimpleMission {
 		 * => obsParis => slew => nadir law
 		 *
 		 * To do that, we need to compute the slew duration from the end of nadir law to
-		 * the begining of Paris obs and then from the end of Paris obs to the begining
+		 * the beginning of Paris obs and then from the end of Paris obs to the beginning
 		 * of nadir law. For that, we use the Satellite#computeSlewDurationMethod() as
 		 * before. We know we have to the time to perform the slew thanks to the
 		 * cinematic checks we already did during the observation plan computation.
@@ -427,9 +427,9 @@ public class CompleteMission extends SimpleMission {
 		/**
 		 * Now your job is finished, the two following methods will finish the job for
 		 * you : checkCinematicPlan() will check that each slew's duration is longer
-		 * than the theoritical duration it takes to perform the same slew. Then, if the
+		 * than the theoretical duration it takes to perform the same slew. Then, if the
 		 * cinematic plan is valid, computeFinalScore() will compute the score of your
-		 * observation plan. Finaly, generateVTSVisualization will write all the
+		 * observation plan. Finally, generateVTSVisualization will write all the
 		 * ephemeris (Position/Velocity + Attitude) and generate a VTS simulation that
 		 * you will be able to play to visualize and validate your plans.
 		 */
@@ -683,7 +683,7 @@ public class CompleteMission extends SimpleMission {
 	 * [COPY-PASTE AND COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
 	 *
 	 * This method should compute a {@link Timeline} object which encapsulates all
-	 * the {@link Phenomenon} corresponding to a orbital phenomenon X relative to
+	 * the {@link Phenomenon} corresponding to an orbital phenomenon X relative to
 	 * the input target {@link Site}. For example, X can be the {@link Site}
 	 * visibility phenomenon.
 	 *
@@ -701,7 +701,7 @@ public class CompleteMission extends SimpleMission {
 		/**
 		 * Here is a quick idea of how to compute a Timeline. A Timeline contains a
 		 * PhenomenaList, which is list of Phenomenon objects. Each Phenomenon object
-		 * represents an phenomenon in orbit which is defined between two AbsoluteDate
+		 * represents a phenomenon in orbit which is defined between two AbsoluteDate
 		 * objects and their associated CodedEvent which define the begin and the end of
 		 * the Phenomenon. For example, the Sun visibility can be defined as a
 		 * phenomenon beginning with the start of visibility and ending with the end of
@@ -719,7 +719,7 @@ public class CompleteMission extends SimpleMission {
 		 * a representative case.
 		 *
 		 * Below are some basic steps and tips to help you search for the right
-		 * informations in Javadoc and in the Patrius formation in order to compute your
+		 * information in Javadoc and in the Patrius formation in order to compute your
 		 * Timeline.
 		 *
 		 */
@@ -804,7 +804,7 @@ public class CompleteMission extends SimpleMission {
 		this.getSatellite().getPropagator().propagate(this.getEndDate());
 		/**
 		 * Remark : since you can add as many EventDetectors as you want to a
-		 * propagator, you might wanna delay this step afterwards to propagate the orbit
+		 * propagator, you might want to delay this step afterwards to propagate the orbit
 		 * with all your detectors at once. Here we do it here to provide an example but
 		 * feel free to code your own more performant version of it.
 		 */
@@ -862,7 +862,7 @@ public class CompleteMission extends SimpleMission {
 		//this.getSatellite().getPropagator().propagate(this.getEndDate());
 		/**
 		 * Remark : since you can add as many EventDetectors as you want to a
-		 * propagator, you might wanna delay this step afterwards to propagate the orbit
+		 * propagator, you might want to delay this step afterwards to propagate the orbit
 		 * with all your detectors at once. Here we do it here to provide an example but
 		 * feel free to code your own more performant version of it.
 		 */
@@ -898,7 +898,7 @@ public class CompleteMission extends SimpleMission {
 		// this.getSatellite().getPropagator().propagate(this.getEndDate());
 		/**
 		 * Remark : since you can add as many EventDetectors as you want to a
-		 * propagator, you might wanna delay this step afterwards to propagate the orbit
+		 * propagator, you might want to delay this step afterwards to propagate the orbit
 		 * with all your detectors at once. Here we do it here to provide an example but
 		 * feel free to code your own more performant version of it.
 		 */
@@ -955,7 +955,7 @@ public class CompleteMission extends SimpleMission {
 		 *
 		 * Note that when you create a detector, you choose the actions that it will
 		 * perform when the target event is detected. See the module 5 for more
-		 * informations about this.
+		 * information about this.
 		 *
 		 * Tip 1 : For the visibility detector, you can use a SensorModel. You will have
 		 * to add the Earth as a masking body with the method addMaskingCelestialBody
@@ -970,7 +970,7 @@ public class CompleteMission extends SimpleMission {
 		 * Tip 3 : When you create the detectors listed above, you can use the two
 		 * public final static fields MAXCHECK_EVENTS and TRESHOLD_EVENTS to configure
 		 * the detector (those values are often asked in input of the EventDectector
-		 * classes. You will also indicate the Action to perform when the detection
+		 * classes). You will also indicate the Action to perform when the detection
 		 * occurs, which is Action.CONTINUE.
 		 */
 		/*
@@ -1060,7 +1060,7 @@ public class CompleteMission extends SimpleMission {
 		 * Attitude of a Satellite that only points one target at the surface of a
 		 * BodyShape. The earth object from the SimpleMission is a BodyShape and we
 		 * remind you that the Site object has an attribute which is a GeodeticPoint.
-		 * Use those informations to your advantage to build a TargetGroundPointing.
+		 * Use those information to your advantage to build a TargetGroundPointing.
 		 */
 
 
