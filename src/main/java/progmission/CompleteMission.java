@@ -14,6 +14,7 @@ import fr.cnes.sirius.patrius.events.postprocessing.*;
 import fr.cnes.sirius.patrius.events.sensor.SensorVisibilityDetector;
 import fr.cnes.sirius.patrius.frames.FramesFactory;
 import fr.cnes.sirius.patrius.frames.TopocentricFrame;
+import fr.cnes.sirius.patrius.math.geometry.euclidean.threed.Vector3D;
 import fr.cnes.sirius.patrius.math.util.FastMath;
 import fr.cnes.sirius.patrius.orbits.Orbit;
 import fr.cnes.sirius.patrius.orbits.pvcoordinates.PVCoordinatesProvider;
@@ -376,53 +377,108 @@ public class CompleteMission extends SimpleMission {
 		 * before. We know we have to the time to perform the slew thanks to the
 		 * cinematic checks we already did during the observation plan computation.
 		 */
-		// Getting the Paris Site
-		Site paris = this.getSiteList().get(0);
-		// Getting the associated observation leg defined previously
-		AttitudeLeg parisObsLeg = observationPlan.get(paris);
+
+		AbsoluteDate start = this.getStartDate();
+		AbsoluteDate end = this.getEndDate();
+
+		LinkedHashMap<Site, AttitudeLawLeg> sortedPlan = new LinkedHashMap<>();
+		ArrayList<AttitudeLawLeg> list = new ArrayList<>();
+		for (Map.Entry<Site, AttitudeLawLeg> entry : this.observationPlan.entrySet()) {
+			list.add(entry.getValue());
+		}
+		Collections.sort(list, new Comparator<AttitudeLeg>() {
+			@Override
+			public int compare(AttitudeLeg att1, AttitudeLeg att2) {
+				return (att1).getTimeInterval().compareTo(att2.getTimeInterval());
+			}
+		});
+		for (AttitudeLawLeg att : list) {
+			for (Entry<Site, AttitudeLawLeg> entry : this.observationPlan.entrySet()) {
+				if (entry.getValue().equals(att)) {
+					sortedPlan.put(entry.getKey(), att);
+				}
+			}
+		}
+		// TODO : enlever le re-tri des éléments si la Map observationPlan est déjà triée en sortie de computeObservationPlan (avec Geof et Thibs)
+
+		Set<Site> keySet = sortedPlan.keySet();
+		List<Site> listKeys = new ArrayList<Site>(keySet);
 
 		// Getting our nadir law
 		AttitudeLaw nadirLaw = this.getSatellite().getDefaultAttitudeLaw();
 
-		// Getting all the dates we need to compute our slews
-		AbsoluteDate start = this.getStartDate();
-		AbsoluteDate end = this.getEndDate();
-		AbsoluteDate obsStart = parisObsLeg.getDate();
-		AbsoluteDate obsEnd = parisObsLeg.getEnd();
+		boolean isFirstObservation = true;
+		boolean isLastObservation = false;
+		Attitude endPreviousAttitude = null;
+		AbsoluteDate endPreviousAttitudeLaw = null;
+		Site previousSite = null;
 
-		// For the slew nadir => paris and paris => nadir, we will use the maximum
-		// duration because we have a lot of time here. In practice, you will use either
-		// the maximum possible time if you have nothing else planned around or the
-		// available time coming from the duration until next observation programmed.
-		AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-getSatellite().getMaxSlewDuration());
-		AbsoluteDate startNadirLaw2 = obsEnd.shiftedBy(+getSatellite().getMaxSlewDuration());
+		int currentIndex = 0;
+		for (final Site currentSite : listKeys) {
+			currentIndex+=1;
+			if (currentIndex > 1) {
+				isFirstObservation = false;
+			}
+			if(currentIndex == sortedPlan.size()){
+				isLastObservation = true;
+			}
 
-		// The propagator will be used to compute Attitudes
-		KeplerianPropagator propagator = this.createDefaultPropagator();
+			AttitudeLeg currentObsLeg = sortedPlan.get(currentSite);
+			//AttitudeLeg parisObsLeg = observationPlan.get(currentSite);
 
-		// Computing the Attitudes used to compute the slews
-		Attitude startObsAttitude = parisObsLeg.getAttitude(propagator, obsStart, getEme2000());
-		Attitude endObsAttitude = parisObsLeg.getAttitude(propagator, obsEnd, getEme2000());
-		Attitude endNadir1Attitude = nadirLaw.getAttitude(propagator, endNadirLaw1, getEme2000());
-		Attitude startNadir2Attitude = nadirLaw.getAttitude(propagator, startNadirLaw2, getEme2000());
+			// Getting all the dates we need to compute our slews
+			AbsoluteDate obsStart = currentObsLeg.getDate();
+			AbsoluteDate obsEnd = currentObsLeg.getEnd();
 
-		// Finally computing the slews
-		// From nadir law 1 to Paris observation
-		ConstantSpinSlew slew1 = new ConstantSpinSlew(endNadir1Attitude, startObsAttitude, "Slew_Nadir_to_Paris");
-		// From Paris observation to nadir law 2
-		ConstantSpinSlew slew2 = new ConstantSpinSlew(endObsAttitude, startNadir2Attitude, "Slew_Paris_to_Nadir");
+			// The propagator will be used to compute Attitudes
+			KeplerianPropagator propagator = this.createDefaultPropagator();
 
-		// We create our two Nadir legs using the dates we computed
-		AttitudeLawLeg nadir1 = new AttitudeLawLeg(nadirLaw, start, endNadirLaw1, "Nadir_Law_1");
-		AttitudeLawLeg nadir2 = new AttitudeLawLeg(nadirLaw, startNadirLaw2, end, "Nadir_Law_2");
+			// For the slew nadir => paris and paris => nadir, we will use the maximum
+			// duration because we have a lot of time here. In practice, you will use either
+			// the maximum possible time if you have nothing else planned around or the
+			// available time coming from the duration until next observation programmed.
 
-		// Finally we can add all those legs to our cinametic plan, in the chronological
-		// order
-		cinematicPlan.add(nadir1);
-		cinematicPlan.add(slew1);
-		cinematicPlan.add(parisObsLeg);
-		cinematicPlan.add(slew2);
-		cinematicPlan.add(nadir2);
+			// Computing the Attitudes used to compute the slews
+			Attitude startObsAttitude = currentObsLeg.getAttitude(propagator, obsStart, getEme2000());
+			Attitude endObsAttitude = currentObsLeg.getAttitude(propagator, obsEnd, getEme2000());
+
+
+			if(isFirstObservation) {
+				AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-getSatellite().getMaxSlewDuration());
+				this.getSatellite()
+						.computeSlewDuration(startAtt, endAtt);
+				// We create our two Nadir legs using the dates we computed
+				AttitudeLawLeg nadir1 = new AttitudeLawLeg(nadirLaw, start, endNadirLaw1, "Nadir_Law_1");
+				// From nadir law 1 to current observation
+				Attitude endNadir1Attitude = nadirLaw.getAttitude(propagator, endNadirLaw1, getEme2000());
+
+				ConstantSpinSlew slew1 = new ConstantSpinSlew(endNadir1Attitude, startObsAttitude, "Slew_Nadir_to_"+currentSite.getName());
+
+				cinematicPlan.add(nadir1);
+				cinematicPlan.add(slew1);
+			}else{
+				ConstantSpinSlew slew1 = new ConstantSpinSlew(endPreviousAttitude, startObsAttitude, "Slew_"+previousSite.getName()+"_to_"+currentSite.getName());
+				cinematicPlan.add(slew1);
+			}
+
+
+			cinematicPlan.add(currentObsLeg);
+
+			// Finally computing the slews
+
+			if(isLastObservation) {
+				AbsoluteDate startNadirLaw2 = obsEnd.shiftedBy(+getSatellite().getMaxSlewDuration());
+				Attitude startNadir2Attitude = nadirLaw.getAttitude(propagator, startNadirLaw2, getEme2000());
+				// From currentObservation observation to nadir law 2
+				ConstantSpinSlew slew2 = new ConstantSpinSlew(endObsAttitude, startNadir2Attitude, "Slew_"+currentSite.getName()+"_to_Nadir");
+				AttitudeLawLeg nadir2 = new AttitudeLawLeg(nadirLaw, startNadirLaw2, end, "Nadir_Law_2");
+				cinematicPlan.add(slew2);
+				cinematicPlan.add(nadir2);
+			}
+
+			endPreviousAttitude = endObsAttitude;
+			previousSite = currentSite;
+		}
 
 		/**
 		 * Now your job is finished, the two following methods will finish the job for
@@ -1056,7 +1112,7 @@ public class CompleteMission extends SimpleMission {
 		 * To perform an observation, the satellite needs to point the target for a
 		 * fixed duration.
 		 *
-		 * Here, you will use the {@link TargetGroundPointing}. This law provides a the
+		 * Here, you will use the {@link TargetGroundPointing}. This law provides the
 		 * Attitude of a Satellite that only points one target at the surface of a
 		 * BodyShape. The earth object from the SimpleMission is a BodyShape and we
 		 * remind you that the Site object has an attribute which is a GeodeticPoint.
@@ -1068,7 +1124,7 @@ public class CompleteMission extends SimpleMission {
 		 * Complete the code below to create your observation law and return it
 		 */
 
-		TargetGroundPointing targetGroundPointing = new TargetGroundPointing(this.getEarth(),target.getPoint());
+		TargetGroundPointing targetGroundPointing = new TargetGroundPointing(this.getEarth(),target.getPoint(), Vector3D.MINUS_K,Vector3D.PLUS_I);
 
 		return targetGroundPointing;
 	}
