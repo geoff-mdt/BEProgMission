@@ -169,7 +169,7 @@ public class CompleteMission extends SimpleMission {
 	 */
 	public Map<Site, AttitudeLawLeg> computeObservationPlan() throws PatriusException {
 		/**
-		 * Here are the big constraints and informations you need to build an
+		 * Here are the big constraints and information you need to build an
 		 * observation plan.
 		 *
 		 * Reminder : we can perform only one observation per site of interest during
@@ -184,15 +184,15 @@ public class CompleteMission extends SimpleMission {
 		 * ConstantsBE.INTEGRATION_TIME for the duration of one observation). Finally,
 		 * we must respect the cinematic constraint : using the
 		 * Satellite#computeSlewDuration() method, we need to ensure that the
-		 * theoritical duration of the slew between two consecutive observations is
+		 * theoretical duration of the slew between two consecutive observations is
 		 * always smaller than the actual duration between those consecutive
 		 * observations. Same goes for the slew between a Nadir pointing law and another
-		 * poiting law. Of course, we cannot point two targets at once, so we cannot
+		 * pointing law. Of course, we cannot point two targets at once, so we cannot
 		 * perform two observations during the same AbsoluteDateInterval !
 		 *
 		 * Tip 1 : Here you can use the greedy algorithm presented in class, or any
 		 * method you want. You just have to ensure that all constraints are respected.
-		 * This is a non linear, complex optimization problem (scheduling problem), so
+		 * This is a non-linear, complex optimization problem (scheduling problem), so
 		 * there is no universal answer. Even if you don't manage to build an optimal
 		 * plan, try to code a suboptimal algorithm anyway, we will value any idea you
 		 * have. For example, try with a plan where you have only one observation per
@@ -292,7 +292,7 @@ public class CompleteMission extends SimpleMission {
 				 * WARNING : what we do here doesn't work, we didn't check that there wasn't
 				 * another target observed while inserting this target observation, it's up to
 				 * you to build your observation plan using the methods and tips we provide. You
-				 * can also only insert one observation for each pass of the satellite and it's
+				 * can also only insert one observation for each pass of the satellite, and it's
 				 * fine.
 				 */
 				// Here we use the middle of the accessInterval to define our dates of
