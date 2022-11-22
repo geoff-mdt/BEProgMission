@@ -37,7 +37,7 @@ public class CompleteMissionMain {
 		// Observation objects that can be achieved one after each other by the
 		// satellite without breaking the cinematic constraints imposed by the
 		// satellite agility.
-		/*Map<Site, AttitudeLawLeg> observationPlan = mission.computeObservationPlan();
+		Map<Site, AttitudeLawLeg> observationPlan = mission.computeObservationPlan();
 		System.out.println(observationPlan.toString());
 
 		// Then, we compute the cinematic plan, which is the whole cinematic sequence of
@@ -54,7 +54,7 @@ public class CompleteMissionMain {
 		System.out.println(mission.computeFinalScore());
 
 		//Finally, we write the VTS outputs to visualize and validate our plan
-		mission.generateVTSVisualization(cinematicPlan);*/
+		mission.generateVTSVisualization(cinematicPlan);
 
 
 		System.out.println("\n\nSimulation done");
@@ -65,8 +65,8 @@ public class CompleteMissionMain {
 
 		System.out.println("##################################################");
 
-		// To output files for AcessTimeline Visualization
-		mission.createSimpleVTSVisualization();
+		// To output files for AccessTimeline Visualization
+		//mission.createSimpleVTSVisualization();
 	}
 
 }

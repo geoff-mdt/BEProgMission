@@ -493,7 +493,7 @@ public class CompleteMission extends SimpleMission {
 	public double computeFinalScore() {
 
 		// Convert the observation plan into a Set of sites to make sure a site will not
-		// be evaluate twice
+		// be evaluated twice
 		// The Set makes sure there won't be duplicated sites
 		final Set<Site> sitesSet = new HashSet<>(this.observationPlan.size());
 		for (final Entry<Site, AttitudeLawLeg> entry : this.observationPlan.entrySet()) {
@@ -515,7 +515,7 @@ public class CompleteMission extends SimpleMission {
 	 * Writes the VTS output files : one CIC-POI file to print the sites of
 	 * interest, one CIC-OEM file giving the position and velocity ephemeris of the
 	 * satellite, one CIC-AEM file giving the attitude ephemeris of the satellite
-	 * pointing Nadir nadir only (to help visualize the access field of view of the
+	 * pointing Nadir only (to help visualize the access field of view of the
 	 * satellite) and one CIC-AEM file giving the attitude ephemeris of the
 	 * satellite cinematic plan. Also writes the cinematic plan as a sequence of
 	 * pointing modes for the satellite in a CIC-MEM file.
