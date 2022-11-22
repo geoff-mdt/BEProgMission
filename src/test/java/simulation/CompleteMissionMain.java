@@ -23,12 +23,12 @@ public class CompleteMissionMain {
 		double t0 = System.currentTimeMillis();
 
 		// Instantiating our mission using the CompleteMission object.
-		final CompleteMission mission = new CompleteMission("BE Supaero mission", 100);
+		final CompleteMission mission = new CompleteMission("BE Supaero mission", 10);
 		System.out.println("Complete simulation starting ...");
 		System.out.println(mission);
 
 		// First step is to compute when the satellite can access the targets. Each
-		// access is an observation opportunity to be consider in the later scheduling
+		// access is an observation opportunity to be considered in the latter scheduling
 		// process.
 		Map<Site, Timeline> accessPlan = mission.computeAccessPlan();
 		// System.out.println(accessPlan.toString());
@@ -37,12 +37,12 @@ public class CompleteMissionMain {
 		// Observation objects that can be achieved one after each other by the
 		// satellite without breaking the cinematic constraints imposed by the
 		// satellite agility.
-		/*Map<Site, AttitudeLawLeg> observationPlan = mission.computeObservationPlan();
+		Map<Site, AttitudeLawLeg> observationPlan = mission.computeObservationPlan();
 		System.out.println(observationPlan.toString());
 
 		// Then, we compute the cinematic plan, which is the whole cinematic sequence of
 		// attitude law legs for our satellite during the mission horizon
-		StrictAttitudeLegsSequence<AttitudeLeg> cinematicPlan = mission.computeCinematicPlan();
+		/*StrictAttitudeLegsSequence<AttitudeLeg> cinematicPlan = mission.computeCinematicPlan();
 		System.out.println(cinematicPlan.toPrettyString());
 
 		// Checking our cinematic plan
@@ -66,7 +66,7 @@ public class CompleteMissionMain {
 		System.out.println("##################################################");
 
 		// To output files for AcessTimeline Visualization
-		mission.createSimpleVTSVisualization();
+		// mission.createSimpleVTSVisualization();
 	}
 
 }

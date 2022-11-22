@@ -5,13 +5,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import fr.cnes.sirius.patrius.assembly.models.SensorModel;
-import fr.cnes.sirius.patrius.attitudes.Attitude;
-import fr.cnes.sirius.patrius.attitudes.AttitudeLaw;
-import fr.cnes.sirius.patrius.attitudes.AttitudeLawLeg;
-import fr.cnes.sirius.patrius.attitudes.AttitudeLeg;
-import fr.cnes.sirius.patrius.attitudes.AttitudeProvider;
-import fr.cnes.sirius.patrius.attitudes.ConstantSpinSlew;
-import fr.cnes.sirius.patrius.attitudes.StrictAttitudeLegsSequence;
+import fr.cnes.sirius.patrius.attitudes.*;
 import fr.cnes.sirius.patrius.events.CodedEvent;
 import fr.cnes.sirius.patrius.events.CodedEventsLogger;
 import fr.cnes.sirius.patrius.events.GenericCodingEventDetector;
@@ -149,7 +143,7 @@ public class CompleteMission extends SimpleMission {
 		 */
 		for(Site targetSite: this.getSiteList()) {
 			Timeline siteAccessTimeline = createSiteAccessTimeline(targetSite);
-			accessPlan.put(targetSite, siteAccessTimeline);
+			this.accessPlan.put(targetSite, siteAccessTimeline);
 			ProjectUtilities.printTimeline(siteAccessTimeline, targetSite);
 		}
 		/*Site targetSite = this.getSiteList().get(0);
@@ -230,6 +224,7 @@ public class CompleteMission extends SimpleMission {
 			// Scrolling through the entries of the accessPlan
 			// Getting the target Site
 			final Site target = entry.getKey();
+			System.out.println("____________________________________________________________");
 			System.out.println("Current target site : " + target.getName());
 			// Getting its access Timeline
 			final Timeline timeline = entry.getValue();
@@ -239,7 +234,8 @@ public class CompleteMission extends SimpleMission {
 				// The Phenomena are sorted chronologically so the accessIntervals List is too
 				AbsoluteDateInterval accessInterval = accessWindow.getTimespan();
 				accessIntervals.add(accessInterval);
-				System.out.println(accessInterval.toString());
+				System.out.println("----------------");
+				System.out.println("Access Interval: " + accessInterval.toString());
 
 				// Use this method to create your observation leg, see more help inside the
 				// method.
@@ -276,9 +272,10 @@ public class CompleteMission extends SimpleMission {
 				 * the same AttitudeLaw which is a TargetGroundPointing so the
 				 */
 				double slew12Duration = this.getSatellite().computeSlewDuration(attitude1, attitude2);
-				System.out.println("Maximum possible duration of the slew : " + slew12Duration);
 				double actualDuration = date2.durationFrom(date1);
-				System.out.println("Actual duration of the slew : " + actualDuration);
+				// Error supposedly here : interchanged actual and maximum slew durations
+				System.out.println("Maximum possible duration of the slew : " + actualDuration);
+				System.out.println("Actual duration of the slew : " + slew12Duration);
 				/*
 				 * Of course, here the actual duration is less than the maximum possible
 				 * duration because the TargetGroundPointing mode is a very slow one and the
@@ -288,19 +285,27 @@ public class CompleteMission extends SimpleMission {
 				 * perform one of the observation.
 				 */
 
+				// To avoid observing several times a target
+				/* if(!this.observationPlan.containsKey(target)){
+
+				} else {
+					break;
+				}
+				*/
+
 				/*
 				 * Let's say after comparing several observation slews, you find a valid couple
 				 * of dates defining your observation window : {obsStart;obsEnd}, with
 				 * obsEnd.durationFrom(obsStart) == ConstantsBE.INTEGRATION_TIME.
 				 *
 				 * Then you can use those dates to create your AttitudeLawLeg that you will
-				 * insert inside the observation pla, for this target. Reminder : only one
+				 * insert inside the observation plan, for this target. Reminder : only one
 				 * observation in the observation plan per target !
 				 *
 				 * WARNING : what we do here doesn't work, we didn't check that there wasn't
 				 * another target observed while inserting this target observation, it's up to
 				 * you to build your observation plan using the methods and tips we provide. You
-				 * can also only insert one observation for each pass of the satellite and it's
+				 * can also only insert one observation for each pass of the satellite, and it's
 				 * fine.
 				 */
 				// Here we use the middle of the accessInterval to define our dates of
@@ -308,6 +313,9 @@ public class CompleteMission extends SimpleMission {
 				AbsoluteDate middleDate = accessInterval.getMiddleDate();
 				AbsoluteDate obsStart = middleDate.shiftedBy(-ConstantsBE.INTEGRATION_TIME / 2);
 				AbsoluteDate obsEnd = middleDate.shiftedBy(ConstantsBE.INTEGRATION_TIME / 2);
+
+
+
 				AbsoluteDateInterval obsInterval = new AbsoluteDateInterval(obsStart, obsEnd);
 				// Then, we create our AttitudeLawLeg, that we name using the name of the target
 				String legName = "OBS_" + target.getName();
@@ -317,10 +325,19 @@ public class CompleteMission extends SimpleMission {
 				this.observationPlan.put(target, obsLeg);
 
 			}
-
+			System.out.println("____________________________________________________________");
 		}
 
 		return this.observationPlan;
+	}
+
+	public boolean checkIntervalAvailability(AbsoluteDateInterval obsInterval){
+		for(AttitudeLawLeg obsLeg: this.observationPlan.values()){
+			if(obsInterval.overlaps(obsLeg.getTimeInterval())){
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -1062,7 +1079,7 @@ public class CompleteMission extends SimpleMission {
 		 * To perform an observation, the satellite needs to point the target for a
 		 * fixed duration.
 		 *
-		 * Here, you will use the {@link TargetGroundPointing}. This law provides a the
+		 * Here, you will use the {@link TargetGroundPointing}. This law provides the
 		 * Attitude of a Satellite that only points one target at the surface of a
 		 * BodyShape. The earth object from the SimpleMission is a BodyShape and we
 		 * remind you that the Site object has an attribute which is a GeodeticPoint.
@@ -1071,7 +1088,8 @@ public class CompleteMission extends SimpleMission {
 		/*
 		 * Complete the code below to create your observation law and return it
 		 */
-		return null;
+
+		return new TargetGroundPointing(this.getEarth(), target.getPoint());
 	}
 
 	@Override
