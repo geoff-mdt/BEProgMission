@@ -428,7 +428,7 @@ public class CompleteMission extends SimpleMission {
 		// TODO : enlever le re-tri des éléments si la Map observationPlan est déjà triée en sortie de computeObservationPlan (avec Geof et Thibs)
 
 		Set<Site> keySet = sortedPlan.keySet();
-		List<Site> listKeys = new ArrayList<Site>(keySet);
+		List<Site> listKeys = new ArrayList<>(keySet);
 
 		// Getting our nadir law
 		AttitudeLaw nadirLaw = this.getSatellite().getDefaultAttitudeLaw();
@@ -436,7 +436,7 @@ public class CompleteMission extends SimpleMission {
 		boolean isFirstObservation = true;
 		boolean isLastObservation = false;
 		Attitude endPreviousAttitude = null;
-		AbsoluteDate endPreviousAttitudeLaw = null;
+		//AbsoluteDate endPreviousAttitudeLaw = null;
 		Site previousSite = null;
 
 		int currentIndex = 0;
@@ -471,6 +471,10 @@ public class CompleteMission extends SimpleMission {
 
 			if(isFirstObservation) {
 				AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-getSatellite().getMaxSlewDuration());
+				//AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-getSatellite().computeSlewDuration(FastMath.abs(startObsAttitude.getRotation().getAngle())));
+				//		.computeSlewDuration(endNadir1Attitude, endAtt));
+				// .computeSlewDuration(startAtt, endAtt)
+				// TODO
 				// We create our two Nadir legs using the dates we computed
 				AttitudeLawLeg nadir1 = new AttitudeLawLeg(nadirLaw, start, endNadirLaw1, "Nadir_Law_1");
 				// From nadir law 1 to current observation
