@@ -170,164 +170,38 @@ public class CompleteMission extends SimpleMission {
 	 *                          computations
 	 */
 	public Map<Site, AttitudeLawLeg> computeObservationPlan() throws PatriusException {
-		/**
-		 * Here are the big constraints and informations you need to build an
-		 * observation plan.
-		 *
-		 * Reminder : we can perform only one observation per site of interest during
-		 * the mission horizon.
-		 *
-		 * Objective : Now we have our access plan, listing for each Site all the access
-		 * windows. There might be up to one access window per orbit pass above each
-		 * site, so we have to decide for each Site which access window will be used to
-		 * achieve the observation of the Site. Then, during one access window, we have
-		 * to decide when precisely we perform the observation, which lasts a constant
-		 * duration which is much smaller than the access window itself (see
-		 * ConstantsBE.INTEGRATION_TIME for the duration of one observation). Finally,
-		 * we must respect the cinematic constraint : using the
-		 * Satellite#computeSlewDuration() method, we need to ensure that the
-		 * theoritical duration of the slew between two consecutive observations is
-		 * always smaller than the actual duration between those consecutive
-		 * observations. Same goes for the slew between a Nadir pointing law and another
-		 * poiting law. Of course, we cannot point two targets at once, so we cannot
-		 * perform two observations during the same AbsoluteDateInterval !
-		 *
-		 * Tip 1 : Here you can use the greedy algorithm presented in class, or any
-		 * method you want. You just have to ensure that all constraints are respected.
-		 * This is a non linear, complex optimization problem (scheduling problem), so
-		 * there is no universal answer. Even if you don't manage to build an optimal
-		 * plan, try to code a suboptimal algorithm anyway, we will value any idea you
-		 * have. For example, try with a plan where you have only one observation per
-		 * satellite pass over France. With that kind of plan, you make sure all
-		 * cinematic constraint are respected (no slew to fast for the satellite
-		 * agility) and you have a basic plan to use to build your cinematic plan and
-		 * validate with VTS visualization.
-		 *
-		 * Tip 2 : We provide the observation plan format : a Map of AttitudeLawLeg. In
-		 * doing so, we give you the structure that you must obtain in order to go
-		 * further. If you check the Javadoc of the AttitudeLawLeg class, you see that
-		 * you have two inputs. First, you must provide a specific interval of time that
-		 * you have to chose inside one of the access windows of your access plan. Then,
-		 * we give you which law to use for observation legs : TargetGroundPointing.
-		 *
-		 */
-		/*
-		 * We provide a basic and incomplete code that you can use to compute the
-		 * observation plan.
-		 *
-		 * Here the only thing we do is printing all the access opportunities using the
-		 * Timeline objects. We get a list of AbsoluteDateInterval from the Timelines,
-		 * which is the basis of the creation of AttitudeLawLeg objects since you need
-		 * an AbsoluteDateInterval or two AbsoluteDates to do it.
-		 */
-		for (final Entry<Site, Timeline> entry : this.accessPlan.entrySet()) {
-			// Scrolling through the entries of the accessPlan
-			// Getting the target Site
-			final Site target = entry.getKey();
-			System.out.println("____________________________________________________________");
-			System.out.println("Current target site : " + target.getName());
-			// Getting its access Timeline
-			final Timeline timeline = entry.getValue();
-			// Getting the access intervals
-			final AbsoluteDateIntervalsList accessIntervals = new AbsoluteDateIntervalsList();
-			for (final Phenomenon accessWindow : timeline.getPhenomenaList()) {
-				// The Phenomena are sorted chronologically so the accessIntervals List is too
-				AbsoluteDateInterval accessInterval = accessWindow.getTimespan();
-				accessIntervals.add(accessInterval);
-				System.out.println("----------------");
-				System.out.println("Access Interval: " + accessInterval.toString());
 
-				// Use this method to create your observation leg, see more help inside the
-				// method.
-				AttitudeLaw observationLaw = createObservationLaw(target);
+		List<Reservation> listResas = new ArrayList<>();
+		for(final Entry<Site, Timeline> entry : this.accessPlan.entrySet()){
+		// Scrolling through the entries of the accessPlan
+		// Getting the target Site
+		final Site target = entry.getKey();
+		System.out.println("____________________________________________________________");
+		System.out.println("Current target site : " + target.getName());
+		// Getting its access Timeline
+		final Timeline timeline = entry.getValue();
+		// Getting the access intervals
+		final AbsoluteDateIntervalsList accessIntervals = new AbsoluteDateIntervalsList();
+		for (final Phenomenon accessWindow : timeline.getPhenomenaList()) {
 
-				/**
-				 * Now that you have your observation law, you can compute at any AbsoluteDate
-				 * the Attitude of your Satellite pointing the target (using the getAttitude()
-				 * method). You can use those Attitudes to compute the duration of a slew from
-				 * one Attitude to another, for example the duration of the slew from the
-				 * Attitude at the end of an observation to the Atittude at the start of the
-				 * next one. That's how you will be able to choose a valid AbsoluteDateInterval
-				 * during which the observation will actually be performed, lasting
-				 * ConstantsBE.INTEGRATION_TIME seconds. When you have your observation
-				 * interval, you can build an AttitudeLawLeg using the observationLaw and this
-				 * interval and finally add this leg to the observation plan.
-				 */
-				/*
-				 * Here is an example of how to compute an Attitude. You need a
-				 * PVCoordinatePropagator (which we provide we the method
-				 * SimpleMission#createDefaultPropagator()), an AbsoluteDate and a Frame (which
-				 * we provide with this.getEME2000()).
-				 */
-				// Getting the begining/end of the accessIntervall as AbsoluteDate objects
-				AbsoluteDate date1 = accessInterval.getLowerData();
-				AbsoluteDate date2 = accessInterval.getUpperData();
-				Attitude attitude1 = observationLaw.getAttitude(this.createDefaultPropagator(), date1,
-						this.getEme2000());
-				Attitude attitude2 = observationLaw.getAttitude(this.createDefaultPropagator(), date2,
-						this.getEme2000());
-				/*
-				 * Now here is an example of code showing how to compute the duration of the
-				 * slew from attitude1 to attitude2 Here we compare two Attitudes coming from
-				 * the same AttitudeLaw which is a TargetGroundPointing so the
-				 */
-				double slew12Duration = this.getSatellite().computeSlewDuration(attitude1, attitude2);
-				double actualDuration = date2.durationFrom(date1);
-				// Error supposedly here : interchanged actual and maximum slew durations
-				System.out.println("Maximum possible duration of the slew : " + actualDuration);
-				System.out.println("Actual duration of the slew : " + slew12Duration);
-				/*
-				 * Of course, here the actual duration is less than the maximum possible
-				 * duration because the TargetGroundPointing mode is a very slow one and the
-				 * Satellite is very agile. But sometimes when trying to perform a slew from one
-				 * target to another, you will find that the Satellite doesn't have enough time,
-				 * then you need to either translate one of the observations or just don't
-				 * perform one of the observation.
-				 */
+			AbsoluteDate ts = accessWindow.getStartingEvent().getDate();
 
-				// To avoid observing several times a target
-				/* if(!this.observationPlan.containsKey(target)){
-
-				} else {
-					break;
+			if(listResas.size() == 0){
+				listResas.add(new Reservation(accessWindow.getStartingEvent().getDate(), target));
+				break; // Break to ensure only one obs by target site
+			} else {
+				for(Reservation resa : listResas){
+					// First potential timeslot comparison
+					if(ts.compareTo(resa.getStartDate().shiftedBy(-getSatellite().getMaxSlewDuration() - 10)) < 0 ){
+						listResas.add(new Reservation(accessWindow.getStartingEvent().getDate(), target));
+						listResas.sort(null);
+						break;
+					}
 				}
-				*/
-
-				/*
-				 * Let's say after comparing several observation slews, you find a valid couple
-				 * of dates defining your observation window : {obsStart;obsEnd}, with
-				 * obsEnd.durationFrom(obsStart) == ConstantsBE.INTEGRATION_TIME.
-				 *
-				 * Then you can use those dates to create your AttitudeLawLeg that you will
-				 * insert inside the observation plan, for this target. Reminder : only one
-				 * observation in the observation plan per target !
-				 *
-				 * WARNING : what we do here doesn't work, we didn't check that there wasn't
-				 * another target observed while inserting this target observation, it's up to
-				 * you to build your observation plan using the methods and tips we provide. You
-				 * can also only insert one observation for each pass of the satellite, and it's
-				 * fine.
-				 */
-				// Here we use the middle of the accessInterval to define our dates of
-				// observation
-				AbsoluteDate middleDate = accessInterval.getMiddleDate();
-				AbsoluteDate obsStart = middleDate.shiftedBy(-ConstantsBE.INTEGRATION_TIME / 2);
-				AbsoluteDate obsEnd = middleDate.shiftedBy(ConstantsBE.INTEGRATION_TIME / 2);
-
-
-
-				AbsoluteDateInterval obsInterval = new AbsoluteDateInterval(obsStart, obsEnd);
-				// Then, we create our AttitudeLawLeg, that we name using the name of the target
-				String legName = "OBS_" + target.getName();
-				AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, obsInterval, legName);
-
-				// Finally, we add our leg to the plan
-				this.observationPlan.put(target, obsLeg);
-
 			}
-			System.out.println("____________________________________________________________");
 		}
-
+		System.out.println("____________________________________________________________");
+	}
 		return this.observationPlan;
 	}
 
@@ -343,7 +217,7 @@ public class CompleteMission extends SimpleMission {
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
 	 *
-	 * Computes the cinematic plan..
+	 * Computes the cinematic plan...
 	 *
 	 * Here you need to compute the cinematic plan, which is the cinematic chain of
 	 * attitude law legs (observation, default law and slews) needed to perform the
