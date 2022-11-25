@@ -433,6 +433,7 @@ public class CompleteMission extends SimpleMission {
 		// Getting our nadir law
 		AttitudeLaw nadirLaw = this.getSatellite().getDefaultAttitudeLaw();
 
+		double MAX_TIME_TO_NADIR = this.getSatellite().computeSlewDuration(ConstantsBE.POINTING_CAPACITY);
 		boolean isFirstObservation = true;
 		boolean isLastObservation = false;
 		Attitude endPreviousAttitude = null;
@@ -486,11 +487,9 @@ public class CompleteMission extends SimpleMission {
 				cinematicPlan.add(slew1);
 			}else{
 				// Si on a le temps de repasser au nadir, on le fait
-				if(startObsAttitude.getDate().durationFrom(endPreviousAttitude.getDate()) > 2*getSatellite().getMaxSlewDuration()){
-					AbsoluteDate endNadirSlewInter1 = endPreviousAttitude.getDate().shiftedBy(getSatellite().getMaxSlewDuration());
-
-					AbsoluteDate beginNadirSlewInter2 = obsStart.shiftedBy(-getSatellite().getMaxSlewDuration());
-
+				if(startObsAttitude.getDate().durationFrom(endPreviousAttitude.getDate()) > 2*MAX_TIME_TO_NADIR){
+					AbsoluteDate endNadirSlewInter1 = endPreviousAttitude.getDate().shiftedBy(MAX_TIME_TO_NADIR);
+					AbsoluteDate beginNadirSlewInter2 = obsStart.shiftedBy(-MAX_TIME_TO_NADIR);
 
 					Attitude beginNadirIntAttitude = nadirLaw.getAttitude(propagator, endNadirSlewInter1.getDate(), getEme2000());
 					Attitude endNadirIntAttitude = nadirLaw.getAttitude(propagator, beginNadirSlewInter2.getDate(), getEme2000());
