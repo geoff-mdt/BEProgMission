@@ -496,7 +496,7 @@ public class CompleteMission extends SimpleMission {
 					Attitude endNadirIntAttitude = nadirLaw.getAttitude(propagator, beginNadirSlewInter2.getDate(), getEme2000());
 
 					AttitudeLawLeg nadirInter = new AttitudeLawLeg(nadirLaw, endNadirSlewInter1, beginNadirSlewInter2, "Nadir_Law_Inter");
-					ConstantSpinSlew slewInter1 = new ConstantSpinSlew(endPreviousAttitude, beginNadirIntAttitude, "Slew_"+previousSite.getName()+"_to_NadirInter"+currentSite.getName());
+					ConstantSpinSlew slewInter1 = new ConstantSpinSlew(endPreviousAttitude, beginNadirIntAttitude, "Slew_"+previousSite.getName()+"_to_NadirInter");
 					ConstantSpinSlew slewInter2 = new ConstantSpinSlew(endNadirIntAttitude, startObsAttitude, "Slew_NadirInter_to_"+currentSite.getName());
 
 					cinematicPlan.add(slewInter1);
