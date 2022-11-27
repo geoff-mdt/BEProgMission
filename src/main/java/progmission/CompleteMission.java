@@ -380,7 +380,7 @@ public class CompleteMission extends SimpleMission {
 		boolean isFirstObservation = true;
 		boolean isLastObservation = false;
 		Attitude endPreviousAttitude = null;
-		AbsoluteDate endPreviousAttitudeLaw = null;
+		//AbsoluteDate endPreviousAttitudeLaw = null;
 		Site previousSite = null;
 
 		int currentIndex = 0;

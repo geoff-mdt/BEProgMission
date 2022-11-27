@@ -42,7 +42,7 @@ public class CompleteMissionMain {
 
 		// Then, we compute the cinematic plan, which is the whole cinematic sequence of
 		// attitude law legs for our satellite during the mission horizon
-		/*StrictAttitudeLegsSequence<AttitudeLeg> cinematicPlan = mission.computeCinematicPlan();
+		StrictAttitudeLegsSequence<AttitudeLeg> cinematicPlan = mission.computeCinematicPlan();
 		System.out.println(cinematicPlan.toPrettyString());
 
 		// Checking our cinematic plan
@@ -54,7 +54,7 @@ public class CompleteMissionMain {
 		System.out.println(mission.computeFinalScore());
 
 		//Finally, we write the VTS outputs to visualize and validate our plan
-		mission.generateVTSVisualization(cinematicPlan);*/
+		mission.generateVTSVisualization(cinematicPlan);
 
 
 		System.out.println("\n\nSimulation done");
