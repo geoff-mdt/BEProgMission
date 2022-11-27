@@ -210,8 +210,8 @@ public class CompleteMission extends SimpleMission {
 						if((resa.getStartDate().compareTo(access_start) > 0
 							&& resa.getStartDate().compareTo(access_end) < 0)
 							||
-							(resa.getEndDate().compareTo(access_end.shiftedBy(-(10+getSatellite().getMaxSlewDuration()))) < 0)
-							&& (resa.getEndDate().compareTo(access_start.shiftedBy(-(10+getSatellite().getMaxSlewDuration()))) > 0)){
+							(resa.getEndDate().compareTo(access_end.shiftedBy(-(ConstantsBE.INTEGRATION_TIME+getSatellite().getMaxSlewDuration()))) < 0)
+							&& (resa.getEndDate().compareTo(access_start.shiftedBy(-(ConstantsBE.INTEGRATION_TIME+getSatellite().getMaxSlewDuration()))) > 0)){
 							listParalellsResas.add(resa);
 						}
 					}
@@ -224,32 +224,32 @@ public class CompleteMission extends SimpleMission {
 					} else {
 						for (int i = 0; i < listParalellsResas.size(); i++) {
 							if(listParalellsResas.size() == 1){
-								if(listParalellsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
+								if(listParalellsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
 									listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
 									break;
-								} else if(listParalellsResas.get(0).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
+								} else if(listParalellsResas.get(0).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
 									listResas.add(new Reservation(listParalellsResas.get(0).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 									break;
 								}
 							} else {
 								if(i == 0){ // Cas initial
-									if(listParalellsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
+									if(listParalellsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
 										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
 								} else if(i == listParalellsResas.size() -1){ // Cas final
 									// i-1 to i
-									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
+									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
 										listResas.add(new Reservation(listParalellsResas.get(i-1).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
-									else if(listParalellsResas.get(i).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
+									else if(listParalellsResas.get(i).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
 										listResas.add(new Reservation(listParalellsResas.get(i).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
 								} else { // Cas milieu
 									// i-1 to i
-									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
+									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
 										listResas.add(new Reservation(listParalellsResas.get(i-1).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
@@ -268,7 +268,7 @@ public class CompleteMission extends SimpleMission {
 		for(Reservation resa: listResas){
 			AttitudeLaw observationLaw = createObservationLaw(resa.getSite());
 			String legName = "OBS_" + resa.getSite().getName();
-			AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, new AbsoluteDateInterval(resa.getStartDate(), resa.getStartDate().shiftedBy(10)), legName);
+			AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, new AbsoluteDateInterval(resa.getStartDate(), resa.getStartDate().shiftedBy(ConstantsBE.INTEGRATION_TIME)), legName);
 			this.observationPlan.put(resa.getSite(), obsLeg);
 			score += resa.getSite().getScore();
 		}
