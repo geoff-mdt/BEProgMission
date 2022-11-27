@@ -109,9 +109,9 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
-	 *
+	 * <p>
 	 * Compute the access plan.
-	 *
+	 * <p>
 	 * Reminder : the access plan corresponds to the object gathering all the
 	 * opportunities of access for all the sites of interest during the mission
 	 * horizon. One opportunity of access is defined by an access window (an
@@ -143,7 +143,7 @@ public class CompleteMission extends SimpleMission {
 		 *
 		 * Please complete the code below.
 		 */
-		for(Site targetSite: this.getSiteList()) {
+		for (Site targetSite : this.getSiteList()) {
 			Timeline siteAccessTimeline = createSiteAccessTimeline(targetSite);
 			this.accessPlan.put(targetSite, siteAccessTimeline);
 			ProjectUtilities.printTimeline(siteAccessTimeline, targetSite);
@@ -157,9 +157,9 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
-	 *
+	 * <p>
 	 * Compute the observation plan.
-	 *
+	 * <p>
 	 * Reminder : the observation plan corresponds to the sequence of observations
 	 * programmed for the satellite during the mission horizon. Each observation is
 	 * defined by an observation window (start date; end date defining an
@@ -167,59 +167,113 @@ public class CompleteMission extends SimpleMission {
 	 * {@link AttitudeLawLeg} giving the attitude guidance to observe the target.
 	 *
 	 * @return the sites observation plan with one {@link AttitudeLawLeg} per
-	 *         {@link Site}
+	 * {@link Site}
 	 * @throws PatriusException If a {@link PatriusException} occurs during the
 	 *                          computations
 	 */
 	public Map<Site, AttitudeLawLeg> computeObservationPlan() throws PatriusException {
 
 		List<Reservation> listResas = new ArrayList<>();
-		for(final Entry<Site, Timeline> entry : this.accessPlan.entrySet()){
-		// Scrolling through the entries of the accessPlan
-		// Getting the target Site
-		final Site target = entry.getKey();
-		System.out.println("____________________________________________________________");
-		System.out.println("Current target site : " + target.getName());
-		// Getting its access Timeline
-		final Timeline timeline = entry.getValue();
-		// Getting the access intervals
-		final AbsoluteDateIntervalsList accessIntervals = new AbsoluteDateIntervalsList();
-		for (final Phenomenon accessWindow : timeline.getPhenomenaList()) {
+		for (final Entry<Site, Timeline> entry : this.accessPlan.entrySet()) {
+			// Scrolling through the entries of the accessPlan
+			// Getting the target Site
+			final Site target = entry.getKey();
+			System.out.println("____________________________________________________________");
+			System.out.println("Current target site : " + target.getName());
 
-			AbsoluteDate ts = accessWindow.getStartingEvent().getDate();
+			// Getting its access Timeline
+			final Timeline timeline = entry.getValue();
+			boolean targetObserved = false;
+			for (final Phenomenon accessWindow : timeline.getPhenomenaList()) {
 
-			if(listResas.size() == 0){
-				listResas.add(new Reservation(accessWindow.getStartingEvent().getDate(), target));
-				break; // Break to ensure only one obs by target site
-			} else {
-				for(Reservation resa : listResas){
-					// First potential timeslot comparison
-					if(ts.compareTo(resa.getStartDate().shiftedBy(-getSatellite().getMaxSlewDuration() - 10)) < 0 ){
-						listResas.add(new Reservation(accessWindow.getStartingEvent().getDate(), target));
-						listResas.sort(null);
+				AbsoluteDate access_start = accessWindow.getStartingEvent().getDate();
+				AbsoluteDate access_end   = accessWindow.getEndingEvent().getDate();
+
+				List<Reservation> listParalellsResas = new ArrayList<>();
+
+				if(targetObserved) { break; }
+
+				if(listResas.size() == 0) {
+					listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+					break;
+				} else{
+					// Building an chronologically sorted list of reservation of interest, for a given access
+					for(Reservation resa: listResas){
+						if(resa.getSite().equals(target)){
+							targetObserved = true;
+						}
+
+						if((resa.getStartDate().compareTo(access_start) > 0
+							&& resa.getStartDate().compareTo(access_end) < 0)
+							||
+							(resa.getEndDate().compareTo(access_end.shiftedBy(-(10+getSatellite().getMaxSlewDuration()))) < 0)
+							&& (resa.getEndDate().compareTo(access_start.shiftedBy(-(10+getSatellite().getMaxSlewDuration()))) > 0)){
+							listParalellsResas.add(resa);
+						}
+					}
+					listParalellsResas.sort(Comparator.comparing(Reservation::getStartDate));
+
+					if(listParalellsResas.size() == 0){
+						listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
 						break;
+					} else {
+						for (int i = 0; i < listParalellsResas.size(); i++) {
+							if(listParalellsResas.size() == 1){
+								if(listParalellsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
+									listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+									break;
+								} else if(listParalellsResas.get(0).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
+									listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+									break;
+								}
+							} else {
+								if(i == 0){ // Cas initial
+									if(listParalellsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
+										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+										break;
+									}
+								} else if(i == listParalellsResas.size() -1){ // Cas final
+									// i-1 to i
+									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
+										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+										break;
+									}
+									else if(listParalellsResas.get(i).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
+										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+										break;
+									}
+								} else { // Cas milieu
+									// i-1 to i
+									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
+										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+										break;
+									}
+								}
+							}
+						}
 					}
 				}
-				*/
 
-				/*
-				 * Let's say after comparing several observation slews, you find a valid couple
-				 * of dates defining your observation window : {obsStart;obsEnd}, with
-				 * obsEnd.durationFrom(obsStart) == ConstantsBE.INTEGRATION_TIME.
-				 *
-				 * Then you can use those dates to create your AttitudeLawLeg that you will
-				 * insert inside the observation plan, for this target. Reminder : only one
-				 * observation in the observation plan per target !
-				 *
-				 * WARNING : what we do here doesn't work, we didn't check that there wasn't
-				 * another target observed while inserting this target observation, it's up to
-				 * you to build your observation plan using the methods and tips we provide. You
-				 * can also only insert one observation for each pass of the satellite, and it's
-				 * fine.
-				 */
-				// Here we use the middle of the accessInterval to define our dates of
-				// observation
-				AbsoluteDate middleDate = accessInterval.getMiddleDate();
+
+
+					/*
+					 * Let's say after comparing several observation slews, you find a valid couple
+					 * of dates defining your observation window : {obsStart;obsEnd}, with
+					 * obsEnd.durationFrom(obsStart) == ConstantsBE.INTEGRATION_TIME.
+					 *
+					 * Then you can use those dates to create your AttitudeLawLeg that you will
+					 * insert inside the observation plan, for this target. Reminder : only one
+					 * observation in the observation plan per target !
+					 *
+					 * WARNING : what we do here doesn't work, we didn't check that there wasn't
+					 * another target observed while inserting this target observation, it's up to
+					 * you to build your observation plan using the methods and tips we provide. You
+					 * can also only insert one observation for each pass of the satellite, and it's
+					 * fine.
+					 */
+					// Here we use the middle of the accessInterval to define our dates of
+					// observation
+				/*AbsoluteDate middleDate = accessInterval.getMiddleDate();
 				AbsoluteDate obsStart = middleDate.shiftedBy(-ConstantsBE.INTEGRATION_TIME / 2);
 				AbsoluteDate obsEnd = middleDate.shiftedBy(ConstantsBE.INTEGRATION_TIME / 2);
 
@@ -231,18 +285,18 @@ public class CompleteMission extends SimpleMission {
 				AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, obsInterval, legName);
 
 				// Finally, we add our leg to the plan
-				this.observationPlan.put(target, obsLeg);
+				this.observationPlan.put(target, obsLeg);*/
+
 
 			}
+			System.out.println("____________________________________________________________");
 		}
-		System.out.println("____________________________________________________________");
-	}
 		return this.observationPlan;
 	}
 
-	public boolean checkIntervalAvailability(AbsoluteDateInterval obsInterval){
-		for(AttitudeLawLeg obsLeg: this.observationPlan.values()){
-			if(obsInterval.overlaps(obsLeg.getTimeInterval())){
+	public boolean checkIntervalAvailability(AbsoluteDateInterval obsInterval) {
+		for (AttitudeLawLeg obsLeg : this.observationPlan.values()) {
+			if (obsInterval.overlaps(obsLeg.getTimeInterval())) {
 				return false;
 			}
 		}
@@ -251,21 +305,21 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
-	 *
-	 * Computes the cinematic plan..
-	 *
+	 * <p>
+	 * Computes the cinematic plan...
+	 * <p>
 	 * Here you need to compute the cinematic plan, which is the cinematic chain of
 	 * attitude law legs (observation, default law and slews) needed to perform the
 	 * mission. Usually, we start and end the mission in default law and during the
 	 * horizon, we alternate between default law, observation legs and slew legs.
 	 *
 	 * @return a {@link StrictAttitudeLegsSequence} that gives all the cinematic
-	 *         plan of the {@link Satellite}. It is a chronological sequence of all
-	 *         the {@link AttitudeLawLeg} that are necessary to define the
-	 *         {@link Attitude} of the {@link Satellite} during all the mission
-	 *         horizon. Those legs can have 3 natures : pointing a target site,
-	 *         pointing nadir and performing a slew between one of the two previous
-	 *         kind of legs.
+	 * plan of the {@link Satellite}. It is a chronological sequence of all
+	 * the {@link AttitudeLawLeg} that are necessary to define the
+	 * {@link Attitude} of the {@link Satellite} during all the mission
+	 * horizon. Those legs can have 3 natures : pointing a target site,
+	 * pointing nadir and performing a slew between one of the two previous
+	 * kind of legs.
 	 * @throws PatriusException
 	 */
 	public StrictAttitudeLegsSequence<AttitudeLeg> computeCinematicPlan() throws PatriusException {
@@ -348,11 +402,11 @@ public class CompleteMission extends SimpleMission {
 
 		int currentIndex = 0;
 		for (final Site currentSite : listKeys) {
-			currentIndex+=1;
+			currentIndex += 1;
 			if (currentIndex > 1) {
 				isFirstObservation = false;
 			}
-			if(currentIndex == sortedPlan.size()){
+			if (currentIndex == sortedPlan.size()) {
 				isLastObservation = true;
 			}
 
@@ -376,19 +430,19 @@ public class CompleteMission extends SimpleMission {
 			Attitude endObsAttitude = currentObsLeg.getAttitude(propagator, obsEnd, getEme2000());
 
 
-			if(isFirstObservation) {
+			if (isFirstObservation) {
 				AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-getSatellite().getMaxSlewDuration());
 				// We create our two Nadir legs using the dates we computed
 				AttitudeLawLeg nadir1 = new AttitudeLawLeg(nadirLaw, start, endNadirLaw1, "Nadir_Law_1");
 				// From nadir law 1 to current observation
 				Attitude endNadir1Attitude = nadirLaw.getAttitude(propagator, endNadirLaw1, getEme2000());
 
-				ConstantSpinSlew slew1 = new ConstantSpinSlew(endNadir1Attitude, startObsAttitude, "Slew_Nadir_to_"+currentSite.getName());
+				ConstantSpinSlew slew1 = new ConstantSpinSlew(endNadir1Attitude, startObsAttitude, "Slew_Nadir_to_" + currentSite.getName());
 
 				cinematicPlan.add(nadir1);
 				cinematicPlan.add(slew1);
-			}else{
-				ConstantSpinSlew slew1 = new ConstantSpinSlew(endPreviousAttitude, startObsAttitude, "Slew_"+previousSite.getName()+"_to_"+currentSite.getName());
+			} else {
+				ConstantSpinSlew slew1 = new ConstantSpinSlew(endPreviousAttitude, startObsAttitude, "Slew_" + previousSite.getName() + "_to_" + currentSite.getName());
 				cinematicPlan.add(slew1);
 			}
 
@@ -397,11 +451,11 @@ public class CompleteMission extends SimpleMission {
 
 			// Finally computing the slews
 
-			if(isLastObservation) {
+			if (isLastObservation) {
 				AbsoluteDate startNadirLaw2 = obsEnd.shiftedBy(+getSatellite().getMaxSlewDuration());
 				Attitude startNadir2Attitude = nadirLaw.getAttitude(propagator, startNadirLaw2, getEme2000());
 				// From currentObservation observation to nadir law 2
-				ConstantSpinSlew slew2 = new ConstantSpinSlew(endObsAttitude, startNadir2Attitude, "Slew_"+currentSite.getName()+"_to_Nadir");
+				ConstantSpinSlew slew2 = new ConstantSpinSlew(endObsAttitude, startNadir2Attitude, "Slew_" + currentSite.getName() + "_to_Nadir");
 				AttitudeLawLeg nadir2 = new AttitudeLawLeg(nadirLaw, startNadirLaw2, end, "Nadir_Law_2");
 				cinematicPlan.add(slew2);
 				cinematicPlan.add(nadir2);
@@ -425,9 +479,9 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [DO NOT MODIFY THIS METHOD]
-	 *
+	 * <p>
 	 * Checks the cinematic plan and prints if it's ok or not.
-	 *
+	 * <p>
 	 * We provide this method so that you can check if your cinematic plan doesn't
 	 * violate a cinematic constraint. It returns a boolean saying if the plan is
 	 * valid or not.
@@ -466,7 +520,7 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [DO NOT MODIFY THIS METHOD]
-	 *
+	 * <p>
 	 * Compute the final score from the observation plan.
 	 *
 	 * <p>
@@ -498,7 +552,7 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [DO NOT MODIFY THIS METHOD]
-	 *
+	 * <p>
 	 * Writes the VTS output files : one CIC-POI file to print the sites of
 	 * interest, one CIC-OEM file giving the position and velocity ephemeris of the
 	 * satellite, one CIC-AEM file giving the attitude ephemeris of the satellite
@@ -508,7 +562,6 @@ public class CompleteMission extends SimpleMission {
 	 * pointing modes for the satellite in a CIC-MEM file.
 	 *
 	 * @param cinematicPlan Input cinematic plan.
-	 *
 	 * @throws PropagationException if an error happens during the {@link Orbit}
 	 *                              propagation
 	 */
@@ -555,18 +608,18 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
-	 *
+	 * <p>
 	 * This method should compute the input {@link Site}'s access {@link Timeline}.
 	 * That is to say the {@link Timeline} which contains all the {@link Phenomenon}
 	 * respecting the access conditions for this site : good visibility + corrrect
 	 * illumination of the {@link Site}.
-	 *
+	 * <p>
 	 * For that, we suggest you create as many {@link Timeline} as you need and
 	 * combine them with logical gates to filter only the access windows phenomenon.
 	 *
 	 * @param targetSite Input target {@link Site}
 	 * @return The {@link Timeline} of all the access {@link Phenomenon} for the
-	 *         input {@link Site}.
+	 * input {@link Site}.
 	 * @throws PatriusException If a {@link PatriusException} occurs.
 	 */
 	private Timeline createSiteAccessTimeline(Site targetSite) throws PatriusException {
@@ -592,7 +645,7 @@ public class CompleteMission extends SimpleMission {
 				new AbsoluteDateInterval(this.getStartDate(), this.getEndDate()));
 
 		// Adding the phenomena of all the considered timelines
-		for (Timeline timeline: listTimeline) {
+		for (Timeline timeline : listTimeline) {
 			// ProjectUtilities.printTimeline(timeline, targetSite);
 			for (final Phenomenon phenom : timeline.getPhenomenaList()) {
 				siteAccessTimeline.addPhenomenon(phenom);
@@ -669,19 +722,19 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [COPY-PASTE AND COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
-	 *
+	 * <p>
 	 * This method should compute a {@link Timeline} object which encapsulates all
 	 * the {@link Phenomenon} corresponding to an orbital phenomenon X relative to
 	 * the input target {@link Site}. For example, X can be the {@link Site}
 	 * visibility phenomenon.
-	 *
+	 * <p>
 	 * You can copy-paste this method and adapt it for every X {@link Phenomenon}
 	 * and {@link Timeline} you need to implement. The global process described here
 	 * stays the same.
 	 *
 	 * @param targetSite Input target {@link Site}
 	 * @return The {@link Timeline} containing all the {@link Phenomenon} relative
-	 *         to the X phenomenon to monitor.
+	 * to the X phenomenon to monitor.
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
@@ -822,11 +875,10 @@ public class CompleteMission extends SimpleMission {
 	}
 
 
-
 	/**
 	 * @param targetSite Input target {@link Site}
 	 * @return The {@link Timeline} containing all the {@link Phenomenon} relative
-	 *         to the X phenomenon to monitor.
+	 * to the X phenomenon to monitor.
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
@@ -863,7 +915,7 @@ public class CompleteMission extends SimpleMission {
 	/**
 	 * @param targetSite Input target {@link Site}
 	 * @return The {@link Timeline} containing all the {@link Phenomenon} relative
-	 *         to the X phenomenon to monitor.
+	 * to the X phenomenon to monitor.
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
@@ -899,7 +951,7 @@ public class CompleteMission extends SimpleMission {
 	/**
 	 * @param targetSite Input target {@link Site}
 	 * @return The {@link Timeline} containing all the {@link Phenomenon} relative
-	 *         to the X phenomenon to monitor.
+	 * to the X phenomenon to monitor.
 	 * @throws PatriusException If a {@link PatriusException} occurs when creating
 	 *                          the {@link Timeline}.
 	 */
@@ -923,18 +975,18 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [COPY-PASTE AND COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
-	 *
+	 * <p>
 	 * Create an adapted instance of {@link EventDetector} matching the input need
 	 * for monitoring the events defined by the X constraint. (X can be a lot of
 	 * things).
-	 *
+	 * <p>
 	 * You can copy-paste this method to adapt it to the {@link EventDetector} X
 	 * that you want to create.
-	 *
+	 * <p>
 	 * Note : this can have different inputs that we don't define here
 	 *
 	 * @return An {@link EventDetector} answering the constraint (for example a
-	 *         {@link SensorVisibilityDetector} for a visibility constraint).
+	 * {@link SensorVisibilityDetector} for a visibility constraint).
 	 */
 	private EventDetector createConstraintXDetector() {
 		/**
@@ -967,7 +1019,7 @@ public class CompleteMission extends SimpleMission {
 		return null;
 	}
 
-	private EventDetector createConstraintVisibilityDetector(Site targetSite){
+	private EventDetector createConstraintVisibilityDetector(Site targetSite) {
 
 		SensorModel sensorModel = new SensorModel(this.getSatellite().getAssembly(), Satellite.SENSOR_NAME);
 		sensorModel.addMaskingCelestialBody(this.getEarth());
@@ -984,7 +1036,7 @@ public class CompleteMission extends SimpleMission {
 				MAXCHECK_EVENTS, TRESHOLD_EVENTS, EventDetector.Action.CONTINUE, EventDetector.Action.CONTINUE);
 	}
 
-	private EventDetector createConstraintSunIncidenceDetector(Site targetSite){
+	private EventDetector createConstraintSunIncidenceDetector(Site targetSite) {
 
 		PVCoordinatesProvider sitePVCoordinates = new TopocentricFrame(
 				this.getEarth(),
@@ -996,13 +1048,13 @@ public class CompleteMission extends SimpleMission {
 				this.getEarth(),
 				sitePVCoordinates,
 				this.getSun(),
-				FastMath.toRadians(180-ConstantsBE.MAX_SUN_INCIDENCE_ANGLE),
+				FastMath.toRadians(180 - ConstantsBE.MAX_SUN_INCIDENCE_ANGLE),
 				MAXCHECK_EVENTS, TRESHOLD_EVENTS,
 				EventDetector.Action.CONTINUE
 		);
 	}
 
-	private EventDetector createConstraintNonGlareDetector(Site targetSite){
+	private EventDetector createConstraintNonGlareDetector(Site targetSite) {
 
 		PVCoordinatesProvider sitePVCoordinates = new TopocentricFrame(
 				this.getEarth(),
@@ -1023,16 +1075,16 @@ public class CompleteMission extends SimpleMission {
 
 	/**
 	 * [COMPLETE THIS METHOD TO ACHIEVE YOUR PROJECT]
-	 *
+	 * <p>
 	 * Create an observation leg, that is to say an {@link AttitudeLaw} that give
 	 * the {@link Attitude} (pointing direction) of the {@link Satellite} in order
 	 * to perform the observation of the input target {@link Site}.
-	 *
+	 * <p>
 	 * An {@link AttitudeLaw} is an {@link AttitudeProvider} providing the method
 	 * {@link AttitudeProvider #getAttitude()} which can be used to compute the
 	 * {@link Attitude} of the {@link Satellite} at any given {@link AbsoluteDate}
 	 * (instant) during the mission horizon.
-	 *
+	 * <p>
 	 * An {@link AttitudeLaw} is valid at anu time in theory.
 	 *
 	 * @param target Input target {@link Site}
@@ -1055,7 +1107,7 @@ public class CompleteMission extends SimpleMission {
 		 * Complete the code below to create your observation law and return it
 		 */
 
-		TargetGroundPointing targetGroundPointing = new TargetGroundPointing(this.getEarth(),target.getPoint(), Vector3D.MINUS_K,Vector3D.PLUS_I);
+		TargetGroundPointing targetGroundPointing = new TargetGroundPointing(this.getEarth(), target.getPoint(), Vector3D.MINUS_K, Vector3D.PLUS_I);
 
 		return targetGroundPointing;
 	}

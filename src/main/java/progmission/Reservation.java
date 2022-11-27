@@ -2,15 +2,18 @@ package progmission;
 
 import fr.cnes.sirius.patrius.time.AbsoluteDate;
 import reader.Site;
+import progmission.Satellite;
 
-public class Reservation {
+import java.util.Comparator;
+
+public class Reservation implements Comparator<Reservation> {
 	private AbsoluteDate startDate;
 	private AbsoluteDate endDate;
 	private Site site;
 
-	public Reservation(AbsoluteDate startDate, Site site) {
+	public Reservation(AbsoluteDate startDate, Site site, double maxSlew) {
 		this.startDate = startDate;
-		this.endDate = startDate.shiftedBy(10);
+		this.endDate = startDate.shiftedBy(10+maxSlew);
 		this.site = site;
 	}
 
@@ -24,5 +27,10 @@ public class Reservation {
 
 	public Site getSite() {
 		return site;
+	}
+
+	@Override
+	public int compare(Reservation r1, Reservation r2) {
+		return r1.getStartDate().compareTo(r2.getStartDate());
 	}
 }
