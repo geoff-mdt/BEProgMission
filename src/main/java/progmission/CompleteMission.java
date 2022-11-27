@@ -210,8 +210,10 @@ public class CompleteMission extends SimpleMission {
 						if((resa.getStartDate().compareTo(access_start) > 0
 							&& resa.getStartDate().compareTo(access_end) < 0)
 							||
-							(resa.getEndDate().compareTo(access_end.shiftedBy(-(ConstantsBE.INTEGRATION_TIME+getSatellite().getMaxSlewDuration()))) < 0)
-							&& (resa.getEndDate().compareTo(access_start.shiftedBy(-(ConstantsBE.INTEGRATION_TIME+getSatellite().getMaxSlewDuration()))) > 0)){
+							(resa.getEndDate().compareTo(access_end) < 0)
+							&& (resa.getEndDate().compareTo(access_start) > 0)
+							|| (resa.getStartDate().compareTo(access_start) < 0)
+							&& (resa.getEndDate().compareTo(access_end) > 0)){
 							listParalellsResas.add(resa);
 						}
 					}
@@ -258,8 +260,6 @@ public class CompleteMission extends SimpleMission {
 						}
 					}
 				}
-
-
 			}
 			System.out.println("____________________________________________________________");
 		}
