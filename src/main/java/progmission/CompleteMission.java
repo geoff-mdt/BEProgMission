@@ -376,6 +376,7 @@ public class CompleteMission extends SimpleMission {
 		// Getting our nadir law
 		AttitudeLaw nadirLaw = this.getSatellite().getDefaultAttitudeLaw();
 
+		double MAX_TIME_TO_NADIR = this.getSatellite().computeSlewDuration(ConstantsBE.POINTING_CAPACITY)+1.0;
 		boolean isFirstObservation = true;
 		boolean isLastObservation = false;
 		Attitude endPreviousAttitude = null;
@@ -423,9 +424,27 @@ public class CompleteMission extends SimpleMission {
 
 				cinematicPlan.add(nadir1);
 				cinematicPlan.add(slew1);
-			} else {
-				ConstantSpinSlew slew1 = new ConstantSpinSlew(endPreviousAttitude, startObsAttitude, "Slew_" + previousSite.getName() + "_to_" + currentSite.getName());
-				cinematicPlan.add(slew1);
+			}else{
+				// Si on a le temps de repasser au nadir, on le fait
+				if(startObsAttitude.getDate().durationFrom(endPreviousAttitude.getDate()) > 2*MAX_TIME_TO_NADIR){
+					AbsoluteDate endNadirSlewInter1 = endPreviousAttitude.getDate().shiftedBy(MAX_TIME_TO_NADIR);
+					AbsoluteDate beginNadirSlewInter2 = obsStart.shiftedBy(-MAX_TIME_TO_NADIR);
+
+					Attitude beginNadirIntAttitude = nadirLaw.getAttitude(propagator, endNadirSlewInter1.getDate(), getEme2000());
+					Attitude endNadirIntAttitude = nadirLaw.getAttitude(propagator, beginNadirSlewInter2.getDate(), getEme2000());
+
+					AttitudeLawLeg nadirInter = new AttitudeLawLeg(nadirLaw, endNadirSlewInter1, beginNadirSlewInter2, "Nadir_Law_Inter");
+					ConstantSpinSlew slewInter1 = new ConstantSpinSlew(endPreviousAttitude, beginNadirIntAttitude, "Slew_"+previousSite.getName()+"_to_NadirInter");
+					ConstantSpinSlew slewInter2 = new ConstantSpinSlew(endNadirIntAttitude, startObsAttitude, "Slew_NadirInter_to_"+currentSite.getName());
+
+					cinematicPlan.add(slewInter1);
+					cinematicPlan.add(nadirInter);
+					cinematicPlan.add(slewInter2);
+
+				}else{
+					ConstantSpinSlew slew1 = new ConstantSpinSlew(endPreviousAttitude, startObsAttitude, "Slew_"+previousSite.getName()+"_to_"+currentSite.getName());
+					cinematicPlan.add(slew1);
+				}
 			}
 
 
