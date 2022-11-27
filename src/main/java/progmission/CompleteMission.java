@@ -32,6 +32,7 @@ import fr.cnes.sirius.patrius.time.AbsoluteDateInterval;
 import fr.cnes.sirius.patrius.time.AbsoluteDateIntervalsList;
 import fr.cnes.sirius.patrius.utils.exception.PatriusException;
 import fr.cnes.sirius.patrius.utils.exception.PropagationException;
+import org.apache.commons.collections.comparators.ReverseComparator;
 import reader.Site;
 import utils.ConstantsBE;
 import utils.ProjectUtilities;
@@ -143,6 +144,7 @@ public class CompleteMission extends SimpleMission {
 		 *
 		 * Please complete the code below.
 		 */
+		this.getSiteList().sort(Comparator.comparing(Site::getScore).reversed());
 		for (Site targetSite : this.getSiteList()) {
 			Timeline siteAccessTimeline = createSiteAccessTimeline(targetSite);
 			this.accessPlan.put(targetSite, siteAccessTimeline);
@@ -173,6 +175,7 @@ public class CompleteMission extends SimpleMission {
 	 */
 	public Map<Site, AttitudeLawLeg> computeObservationPlan() throws PatriusException {
 
+		double score = 0.0;
 		List<Reservation> listResas = new ArrayList<>();
 		for (final Entry<Site, Timeline> entry : this.accessPlan.entrySet()) {
 			// Scrolling through the entries of the accessPlan
@@ -237,7 +240,7 @@ public class CompleteMission extends SimpleMission {
 								} else if(i == listParalellsResas.size() -1){ // Cas final
 									// i-1 to i
 									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
-										listResas.add(new Reservation(listParalellsResas.get(i).getStartDate(), target, getSatellite().getMaxSlewDuration()));
+										listResas.add(new Reservation(listParalellsResas.get(i-1).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
 									else if(listParalellsResas.get(i).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
@@ -247,7 +250,7 @@ public class CompleteMission extends SimpleMission {
 								} else { // Cas milieu
 									// i-1 to i
 									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
-										listResas.add(new Reservation(listParalellsResas.get(i).getStartDate(), target, getSatellite().getMaxSlewDuration()));
+										listResas.add(new Reservation(listParalellsResas.get(i-1).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
 								}
@@ -256,43 +259,19 @@ public class CompleteMission extends SimpleMission {
 					}
 				}
 
+				listResas.sort(Comparator.comparing(Reservation::getStartDate));
 
-
-					/*
-					 * Let's say after comparing several observation slews, you find a valid couple
-					 * of dates defining your observation window : {obsStart;obsEnd}, with
-					 * obsEnd.durationFrom(obsStart) == ConstantsBE.INTEGRATION_TIME.
-					 *
-					 * Then you can use those dates to create your AttitudeLawLeg that you will
-					 * insert inside the observation plan, for this target. Reminder : only one
-					 * observation in the observation plan per target !
-					 *
-					 * WARNING : what we do here doesn't work, we didn't check that there wasn't
-					 * another target observed while inserting this target observation, it's up to
-					 * you to build your observation plan using the methods and tips we provide. You
-					 * can also only insert one observation for each pass of the satellite, and it's
-					 * fine.
-					 */
-					// Here we use the middle of the accessInterval to define our dates of
-					// observation
-				/*AbsoluteDate middleDate = accessInterval.getMiddleDate();
-				AbsoluteDate obsStart = middleDate.shiftedBy(-ConstantsBE.INTEGRATION_TIME / 2);
-				AbsoluteDate obsEnd = middleDate.shiftedBy(ConstantsBE.INTEGRATION_TIME / 2);
-
-
-
-				AbsoluteDateInterval obsInterval = new AbsoluteDateInterval(obsStart, obsEnd);
-				// Then, we create our AttitudeLawLeg, that we name using the name of the target
-				String legName = "OBS_" + target.getName();
-				AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, obsInterval, legName);
-
-				// Finally, we add our leg to the plan
-				this.observationPlan.put(target, obsLeg);*/
-
-
+				for(Reservation resa: listResas){
+					AttitudeLaw observationLaw = createObservationLaw(resa.getSite());
+					String legName = "OBS_" + target.getName();
+					AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, new AbsoluteDateInterval(resa.getStartDate(), resa.getStartDate().shiftedBy(10)), legName);
+					this.observationPlan.put(target, obsLeg);
+					score += resa.getSite().getScore();
+				}
 			}
 			System.out.println("____________________________________________________________");
 		}
+		System.out.println("Score : " + score);
 		return this.observationPlan;
 	}
 

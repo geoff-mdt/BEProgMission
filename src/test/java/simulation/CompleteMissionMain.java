@@ -23,7 +23,7 @@ public class CompleteMissionMain {
 		double t0 = System.currentTimeMillis();
 
 		// Instantiating our mission using the CompleteMission object.
-		final CompleteMission mission = new CompleteMission("BE Supaero mission", 10);
+		final CompleteMission mission = new CompleteMission("BE Supaero mission", 100);
 		System.out.println("Complete simulation starting ...");
 		System.out.println(mission);
 

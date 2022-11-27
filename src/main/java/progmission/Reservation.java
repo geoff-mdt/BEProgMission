@@ -2,7 +2,6 @@ package progmission;
 
 import fr.cnes.sirius.patrius.time.AbsoluteDate;
 import reader.Site;
-import progmission.Satellite;
 
 import java.util.Comparator;
 
