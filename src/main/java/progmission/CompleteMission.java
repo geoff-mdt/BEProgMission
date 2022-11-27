@@ -144,7 +144,6 @@ public class CompleteMission extends SimpleMission {
 		 *
 		 * Please complete the code below.
 		 */
-		this.getSiteList().sort(Comparator.comparing(Site::getScore).reversed());
 		for (Site targetSite : this.getSiteList()) {
 			Timeline siteAccessTimeline = createSiteAccessTimeline(targetSite);
 			this.accessPlan.put(targetSite, siteAccessTimeline);
@@ -177,15 +176,16 @@ public class CompleteMission extends SimpleMission {
 
 		double score = 0.0;
 		List<Reservation> listResas = new ArrayList<>();
-		for (final Entry<Site, Timeline> entry : this.accessPlan.entrySet()) {
-			// Scrolling through the entries of the accessPlan
-			// Getting the target Site
-			final Site target = entry.getKey();
+
+		this.getSiteList().sort(Comparator.comparing(Site::getScore).reversed());
+
+		for(Site target: this.getSiteList()){
+
 			System.out.println("____________________________________________________________");
 			System.out.println("Current target site : " + target.getName());
 
 			// Getting its access Timeline
-			final Timeline timeline = entry.getValue();
+			final Timeline timeline = this.accessPlan.get(target);
 			boolean targetObserved = false;
 			for (final Phenomenon accessWindow : timeline.getPhenomenaList()) {
 
