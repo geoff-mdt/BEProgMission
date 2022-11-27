@@ -259,17 +259,18 @@ public class CompleteMission extends SimpleMission {
 					}
 				}
 
-				listResas.sort(Comparator.comparing(Reservation::getStartDate));
 
-				for(Reservation resa: listResas){
-					AttitudeLaw observationLaw = createObservationLaw(resa.getSite());
-					String legName = "OBS_" + target.getName();
-					AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, new AbsoluteDateInterval(resa.getStartDate(), resa.getStartDate().shiftedBy(10)), legName);
-					this.observationPlan.put(target, obsLeg);
-					score += resa.getSite().getScore();
-				}
 			}
 			System.out.println("____________________________________________________________");
+		}
+		listResas.sort(Comparator.comparing(Reservation::getStartDate));
+
+		for(Reservation resa: listResas){
+			AttitudeLaw observationLaw = createObservationLaw(resa.getSite());
+			String legName = "OBS_" + resa.getSite().getName();
+			AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, new AbsoluteDateInterval(resa.getStartDate(), resa.getStartDate().shiftedBy(10)), legName);
+			this.observationPlan.put(resa.getSite(), obsLeg);
+			score += resa.getSite().getScore();
 		}
 		System.out.println("Score : " + score);
 		return this.observationPlan;
