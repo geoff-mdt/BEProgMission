@@ -414,7 +414,7 @@ public class CompleteMission extends SimpleMission {
 
 
 			if (isFirstObservation) {
-				AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-getSatellite().getMaxSlewDuration());
+				AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-MAX_TIME_TO_NADIR);
 				// We create our two Nadir legs using the dates we computed
 				AttitudeLawLeg nadir1 = new AttitudeLawLeg(nadirLaw, start, endNadirLaw1, "Nadir_Law_1");
 				// From nadir law 1 to current observation
