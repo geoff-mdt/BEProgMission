@@ -191,7 +191,7 @@ public class CompleteMission extends SimpleMission {
 
 				List<Reservation> listParalellsResas = new ArrayList<>();
 
-				if(targetObserved) { break; }
+
 
 				if(listResas.size() == 0) {
 					listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
@@ -201,6 +201,7 @@ public class CompleteMission extends SimpleMission {
 					for(Reservation resa: listResas){
 						if(resa.getSite().equals(target)){
 							targetObserved = true;
+							break;
 						}
 
 						if((resa.getStartDate().compareTo(access_start) > 0
@@ -211,6 +212,7 @@ public class CompleteMission extends SimpleMission {
 							listParalellsResas.add(resa);
 						}
 					}
+					if(targetObserved) { break; }
 					listParalellsResas.sort(Comparator.comparing(Reservation::getStartDate));
 
 					if(listParalellsResas.size() == 0){
@@ -223,7 +225,7 @@ public class CompleteMission extends SimpleMission {
 									listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
 									break;
 								} else if(listParalellsResas.get(0).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
-									listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+									listResas.add(new Reservation(listParalellsResas.get(0).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 									break;
 								}
 							} else {
@@ -235,17 +237,17 @@ public class CompleteMission extends SimpleMission {
 								} else if(i == listParalellsResas.size() -1){ // Cas final
 									// i-1 to i
 									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
-										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+										listResas.add(new Reservation(listParalellsResas.get(i).getStartDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
 									else if(listParalellsResas.get(i).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
-										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+										listResas.add(new Reservation(listParalellsResas.get(i).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
 								} else { // Cas milieu
 									// i-1 to i
 									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(10+ getSatellite().getMaxSlewDuration())) > 0){
-										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
+										listResas.add(new Reservation(listParalellsResas.get(i).getStartDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
 								}
