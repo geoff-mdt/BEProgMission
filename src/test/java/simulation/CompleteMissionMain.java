@@ -64,9 +64,6 @@ public class CompleteMissionMain {
 		System.out.println("Total duration : " + 0.001 * (t1 - t0));
 
 		System.out.println("##################################################");
-
-		// To output files for AcessTimeline Visualization
-		// mission.createSimpleVTSVisualization();
 	}
 
 }

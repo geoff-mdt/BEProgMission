@@ -174,34 +174,34 @@ public class CompleteMission extends SimpleMission {
 	 */
 	public Map<Site, AttitudeLawLeg> computeObservationPlan() throws PatriusException {
 
-		double score = 0.0;
 		List<Reservation> listResas = new ArrayList<>();
 
+		// Sorting sites by score to maximize the total score
 		this.getSiteList().sort(Comparator.comparing(Site::getScore).reversed());
 
+		// Iterating through each site and getting its timeline
 		for(Site target: this.getSiteList()){
-
-			System.out.println("____________________________________________________________");
-			System.out.println("Current target site : " + target.getName());
 
 			// Getting its access Timeline
 			final Timeline timeline = this.accessPlan.get(target);
 			boolean targetObserved = false;
+
+			//
 			for (final Phenomenon accessWindow : timeline.getPhenomenaList()) {
 
 				AbsoluteDate access_start = accessWindow.getStartingEvent().getDate();
 				AbsoluteDate access_end   = accessWindow.getEndingEvent().getDate();
 
-				List<Reservation> listParalellsResas = new ArrayList<>();
-
-
+				List<Reservation> listParallelsResas = new ArrayList<>();
 
 				if(listResas.size() == 0) {
 					listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
 					break;
 				} else{
 					// Building an chronologically sorted list of reservation of interest, for a given access
+					// Theses parallels reservations are those who overlap with the access
 					for(Reservation resa: listResas){
+						// If there is a reservation already booked for a target
 						if(resa.getSite().equals(target)){
 							targetObserved = true;
 							break;
@@ -214,45 +214,56 @@ public class CompleteMission extends SimpleMission {
 							&& (resa.getEndDate().compareTo(access_start) > 0)
 							|| (resa.getStartDate().compareTo(access_start) < 0)
 							&& (resa.getEndDate().compareTo(access_end) > 0)){
-							listParalellsResas.add(resa);
+							listParallelsResas.add(resa);
 						}
 					}
+					// We break the for a second time if we observed the target to escape
 					if(targetObserved) { break; }
-					listParalellsResas.sort(Comparator.comparing(Reservation::getStartDate));
+					listParallelsResas.sort(Comparator.comparing(Reservation::getStartDate));
 
-					if(listParalellsResas.size() == 0){
+					// Base case, if there's none, the beginnig of the access is set for the start of observation time
+					if(listParallelsResas.size() == 0){
 						listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
 						break;
 					} else {
-						for (int i = 0; i < listParalellsResas.size(); i++) {
-							if(listParalellsResas.size() == 1){
-								if(listParalellsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
+						for (int i = 0; i < listParallelsResas.size(); i++) {
+
+							// For 1 reservation overlapping the access duration, we try to put before or immediately after the next reservation
+							if(listParallelsResas.size() == 1){
+								// Before
+								if(listParallelsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
 									listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
 									break;
-								} else if(listParalellsResas.get(0).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
-									listResas.add(new Reservation(listParalellsResas.get(0).getEndDate(), target, getSatellite().getMaxSlewDuration()));
+									// After
+								} else if(listParallelsResas.get(0).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
+									listResas.add(new Reservation(listParallelsResas.get(0).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 									break;
 								}
 							} else {
-								if(i == 0){ // Cas initial
-									if(listParalellsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
+								// For 2 or more, we check BETWEEN successive reservations, thus needing the sort at the beginning.
+								// Initial reservation case
+								if(i == 0){
+									if(listParallelsResas.get(0).getStartDate().compareTo(access_start.shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
 										listResas.add(new Reservation(access_start, target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
-								} else if(i == listParalellsResas.size() -1){ // Cas final
-									// i-1 to i
-									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
-										listResas.add(new Reservation(listParalellsResas.get(i-1).getEndDate(), target, getSatellite().getMaxSlewDuration()));
+									// Final case
+								} else if(i == listParallelsResas.size() -1){
+									// N-2 to N-1
+									if(listParallelsResas.get(i).getStartDate().compareTo(listParallelsResas.get(i-1).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
+										listResas.add(new Reservation(listParallelsResas.get(i-1).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
-									else if(listParalellsResas.get(i).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
-										listResas.add(new Reservation(listParalellsResas.get(i).getEndDate(), target, getSatellite().getMaxSlewDuration()));
+									// N to the end of the access
+									else if(listParallelsResas.get(i).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration()).compareTo(access_end) < 0 ){
+										listResas.add(new Reservation(listParallelsResas.get(i).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
-								} else { // Cas milieu
+									// Middle Case, between two reservations
+								} else {
 									// i-1 to i
-									if(listParalellsResas.get(i).getStartDate().compareTo(listParalellsResas.get(i-1).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
-										listResas.add(new Reservation(listParalellsResas.get(i-1).getEndDate(), target, getSatellite().getMaxSlewDuration()));
+									if(listParallelsResas.get(i).getStartDate().compareTo(listParallelsResas.get(i-1).getEndDate().shiftedBy(ConstantsBE.INTEGRATION_TIME+ getSatellite().getMaxSlewDuration())) > 0){
+										listResas.add(new Reservation(listParallelsResas.get(i-1).getEndDate(), target, getSatellite().getMaxSlewDuration()));
 										break;
 									}
 								}
@@ -261,18 +272,17 @@ public class CompleteMission extends SimpleMission {
 					}
 				}
 			}
-			System.out.println("____________________________________________________________");
 		}
+		// Sorting ensure an easier debugging and is a negligible step in terms of computational time in our project
 		listResas.sort(Comparator.comparing(Reservation::getStartDate));
 
+		// We build the observationPlan with AttitudeLawLeg
 		for(Reservation resa: listResas){
 			AttitudeLaw observationLaw = createObservationLaw(resa.getSite());
 			String legName = "OBS_" + resa.getSite().getName();
 			AttitudeLawLeg obsLeg = new AttitudeLawLeg(observationLaw, new AbsoluteDateInterval(resa.getStartDate(), resa.getStartDate().shiftedBy(ConstantsBE.INTEGRATION_TIME)), legName);
 			this.observationPlan.put(resa.getSite(), obsLeg);
-			score += resa.getSite().getScore();
 		}
-		System.out.println("Score : " + score);
 		return this.observationPlan;
 	}
 
@@ -368,7 +378,6 @@ public class CompleteMission extends SimpleMission {
 				}
 			}
 		}
-		// TODO : enlever le re-tri des éléments si la Map observationPlan est déjà triée en sortie de computeObservationPlan (avec Geof et Thibs)
 
 		Set<Site> keySet = sortedPlan.keySet();
 		List<Site> listKeys = new ArrayList<Site>(keySet);
