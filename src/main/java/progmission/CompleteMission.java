@@ -425,7 +425,6 @@ public class CompleteMission extends SimpleMission {
 				}
 			}
 		}
-		// TODO : enlever le re-tri des éléments si la Map observationPlan est déjà triée en sortie de computeObservationPlan (avec Geof et Thibs)
 
 		Set<Site> keySet = sortedPlan.keySet();
 		List<Site> listKeys = new ArrayList<>(keySet);
