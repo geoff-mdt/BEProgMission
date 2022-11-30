@@ -409,7 +409,6 @@ public class CompleteMission extends SimpleMission {
 			}
 
 			AttitudeLeg currentObsLeg = sortedPlan.get(currentSite);
-			//AttitudeLeg parisObsLeg = observationPlan.get(currentSite);
 
 			// Getting all the dates we need to compute our slews
 			AbsoluteDate obsStart = currentObsLeg.getDate();
@@ -418,11 +417,6 @@ public class CompleteMission extends SimpleMission {
 			// The propagator will be used to compute Attitudes
 			KeplerianPropagator propagator = this.createDefaultPropagator();
 
-			// For the slew nadir => paris and paris => nadir, we will use the maximum
-			// duration because we have a lot of time here. In practice, you will use either
-			// the maximum possible time if you have nothing else planned around or the
-			// available time coming from the duration until next observation programmed.
-
 			// Computing the Attitudes used to compute the slews
 			Attitude startObsAttitude = currentObsLeg.getAttitude(propagator, obsStart, getEme2000());
 			Attitude endObsAttitude = currentObsLeg.getAttitude(propagator, obsEnd, getEme2000());
@@ -430,10 +424,7 @@ public class CompleteMission extends SimpleMission {
 
 			if(isFirstObservation) {
 				AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-getSatellite().getMaxSlewDuration());
-				//AbsoluteDate endNadirLaw1 = obsStart.shiftedBy(-getSatellite().computeSlewDuration(FastMath.abs(startObsAttitude.getRotation().getAngle())));
-				//		.computeSlewDuration(endNadir1Attitude, endAtt));
-				// .computeSlewDuration(startAtt, endAtt)
-				// TODO
+				
 				// We create our two Nadir legs using the dates we computed
 				AttitudeLawLeg nadir1 = new AttitudeLawLeg(nadirLaw, start, endNadirLaw1, "Nadir_Law_1");
 				// From nadir law 1 to current observation
@@ -444,7 +435,7 @@ public class CompleteMission extends SimpleMission {
 				cinematicPlan.add(nadir1);
 				cinematicPlan.add(slew1);
 			}else{
-				// Si on a le temps de repasser au nadir, on le fait
+				// If long time beetween two observations, slew to nadir
 				if(startObsAttitude.getDate().durationFrom(endPreviousAttitude.getDate()) > 2*MAX_TIME_TO_NADIR){
 					AbsoluteDate endNadirSlewInter1 = endPreviousAttitude.getDate().shiftedBy(MAX_TIME_TO_NADIR);
 					AbsoluteDate beginNadirSlewInter2 = obsStart.shiftedBy(-MAX_TIME_TO_NADIR);
@@ -470,7 +461,6 @@ public class CompleteMission extends SimpleMission {
 			cinematicPlan.add(currentObsLeg);
 
 			// Finally computing the slews
-
 			if(isLastObservation) {
 				AbsoluteDate startNadirLaw2 = obsEnd.shiftedBy(+getSatellite().getMaxSlewDuration());
 				Attitude startNadir2Attitude = nadirLaw.getAttitude(propagator, startNadirLaw2, getEme2000());
