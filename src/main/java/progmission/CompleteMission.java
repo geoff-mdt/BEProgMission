@@ -363,47 +363,6 @@ public class CompleteMission extends SimpleMission {
 	 */
 	public StrictAttitudeLegsSequence<AttitudeLeg> computeCinematicPlan() throws PatriusException {
 
-		/**
-		 * Now we want to assemble a continuous attitude law which is valid during all
-		 * the mission horizon. For that, we will use to object
-		 * StrictAttitudeLegsSequence<AttitudeLeg> which is a chronological sequence of
-		 * AttitudeLeg. In our case, each AttitudeLeg will be an AttitudeLawLeg, either
-		 * a leg of site observation, a slew, or the nadir pointing attitude law (see
-		 * the Satellite constructor and the BodyCenterGroundPointing class, it's the
-		 * Satellite default attitude law). For more help about the Attitude handling,
-		 * use the module 11 of the patrius formation.
-		 *
-		 * Tip 1 : Please give names to the different AttitudeLawLeg you build so that
-		 * you can visualize them with VTS later on. For example "OBS_Paris" when
-		 * observing Paris or "SlEW_Paris_Lyon" when adding a slew from Paris
-		 * observation AttitudeLawLeg to Lyon observation AttitudeLawLeg.
-		 *
-		 * Tip 2 : the sequence you want to obtain should look like this :
-		 * [nadir-slew-obs1-slew-obs2-slew-obs3-slew-nadir] for the simple version where
-		 * you don't try to fit nadir laws between observations or
-		 * [nadir-slew-obs1-slew-nadir-selw-obs2-slew-obs3-slew-nadir] for the more
-		 * complexe version with nadir laws if the slew during two observation is long
-		 * enough.
-		 *
-		 * Tip 3 : You can use the class ConstantSpinSlew(initialAttitude,
-		 * finalAttitude, slewName) for the slews. This an AtittudeLeg so you will be
-		 * able to add it to the StrictAttitudeLegsSequence as every other leg.
-		 */
-
-		/*
-		 * Example of code using our observation plan, let's say we only have one obs
-		 * pointing Paris.
-		 *
-		 * Then we are going to create a very basic cinematic plan : nadir law => slew
-		 * => obsParis => slew => nadir law
-		 *
-		 * To do that, we need to compute the slew duration from the end of nadir law to
-		 * the beginning of Paris obs and then from the end of Paris obs to the beginning
-		 * of nadir law. For that, we use the Satellite#computeSlewDurationMethod() as
-		 * before. We know we have to the time to perform the slew thanks to the
-		 * cinematic checks we already did during the observation plan computation.
-		 */
-
 		AbsoluteDate start = this.getStartDate();
 		AbsoluteDate end = this.getEndDate();
 
